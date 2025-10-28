@@ -530,38 +530,13 @@ def api_scenario():
         # Het R-model berekent: ben_instroom_sc6_midden_a = n_inopleiding_perjaar3 +
         #                       (sc6_ftetekort_midden_a / fte_toekomst) * n_inopleiding_perjaar3
         #
-        # Instroomadvies wordt ALTIJD berekend met BASELINE parameters (DEFAULT_PARAMS)
+        # Het instroomadvies wordt berekend op basis van het AANGEPASTE scenario (df),
+        # zodat het correct reageert op zowel aanbod- als vraagparameter wijzigingen.
+        # Dit zorgt ervoor dat het instroomadvies het tekort in 2043 compenseert.
 
-        # Roep R-model aan met baseline parameters (geen VRAAG params = gebruik CSV defaults)
-        df_baseline = call_r_model(
-            instroom=DEFAULT_PARAMS['instroom'],
-            intern_rendement=DEFAULT_PARAMS['intern_rendement'],
-            fte_vrouw=DEFAULT_PARAMS['fte_vrouw'],
-            fte_man=DEFAULT_PARAMS['fte_man'],
-            # Extern rendement - 8 individuele parameters (baseline)
-            extern_rendement_vrouw_1jaar=DEFAULT_PARAMS['extern_rendement_vrouw_1jaar'],
-            extern_rendement_vrouw_5jaar=DEFAULT_PARAMS['extern_rendement_vrouw_5jaar'],
-            extern_rendement_vrouw_10jaar=DEFAULT_PARAMS['extern_rendement_vrouw_10jaar'],
-            extern_rendement_vrouw_15jaar=DEFAULT_PARAMS['extern_rendement_vrouw_15jaar'],
-            extern_rendement_man_1jaar=DEFAULT_PARAMS['extern_rendement_man_1jaar'],
-            extern_rendement_man_5jaar=DEFAULT_PARAMS['extern_rendement_man_5jaar'],
-            extern_rendement_man_10jaar=DEFAULT_PARAMS['extern_rendement_man_10jaar'],
-            extern_rendement_man_15jaar=DEFAULT_PARAMS['extern_rendement_man_15jaar'],
-            # Uitstroom - 8 individuele parameters (baseline)
-            uitstroom_vrouw_5j=DEFAULT_PARAMS['uitstroom_vrouw_5j'],
-            uitstroom_man_5j=DEFAULT_PARAMS['uitstroom_man_5j'],
-            uitstroom_vrouw_10j=DEFAULT_PARAMS['uitstroom_vrouw_10j'],
-            uitstroom_man_10j=DEFAULT_PARAMS['uitstroom_man_10j'],
-            uitstroom_vrouw_15j=DEFAULT_PARAMS['uitstroom_vrouw_15j'],
-            uitstroom_man_15j=DEFAULT_PARAMS['uitstroom_man_15j'],
-            uitstroom_vrouw_20j=DEFAULT_PARAMS['uitstroom_vrouw_20j'],
-            uitstroom_man_20j=DEFAULT_PARAMS['uitstroom_man_20j']
-        )
-
-        # Lees instroomadvies DIRECT uit R-model output
-        # R-model heeft dit al correct berekend volgens STATA formules
-        jaar_2043_baseline = df_baseline[df_baseline['jaar'] == 2043].iloc[0]
-        instroomadvies = jaar_2043_baseline['ben_instroom_sc6_midden_a']
+        # Lees instroomadvies uit het aangepaste scenario
+        jaar_2043_scenario = df[df['jaar'] == 2043].iloc[0]
+        instroomadvies = jaar_2043_scenario['ben_instroom_sc6_midden_a']
 
         return jsonify({
             'projectie': projectie,

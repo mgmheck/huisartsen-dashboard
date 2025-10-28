@@ -1,23 +1,57 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import Dashboard from './Dashboard.tsx';
+import ScenarioModelAPI from './ScenarioModelAPI.tsx';
 
 function App() {
+  const [currentView, setCurrentView] = useState('dashboard');
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+    <div>
+      {/* Navigation Bar */}
+      <div style={{
+        backgroundColor: '#0F2B5B',
+        padding: '1rem 2rem',
+        display: 'flex',
+        gap: '1rem',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        <button
+          onClick={() => setCurrentView('dashboard')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            borderRadius: '0.5rem',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            backgroundColor: currentView === 'dashboard' ? '#006470' : 'transparent',
+            color: 'white',
+            transition: 'all 0.2s'
+          }}
         >
-          Learn React
-        </a>
-      </header>
+          📊 Dashboard
+        </button>
+        <button
+          onClick={() => setCurrentView('scenario')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            borderRadius: '0.5rem',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            backgroundColor: currentView === 'scenario' ? '#006470' : 'transparent',
+            color: 'white',
+            transition: 'all 0.2s'
+          }}
+        >
+          🔮 Scenario Model (Stata-accurate)
+        </button>
+      </div>
+
+      {/* Content */}
+      {currentView === 'dashboard' && <Dashboard />}
+      {currentView === 'scenario' && <ScenarioModelAPI />}
     </div>
   );
 }

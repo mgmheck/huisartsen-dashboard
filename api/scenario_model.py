@@ -222,7 +222,11 @@ def extract_impact_analysis(df: pd.DataFrame) -> dict:
     # Controleer of impact kolommen aanwezig zijn
     if 'impact_demo_midden' not in jaar_2043:
         # Impact kolommen niet beschikbaar (oudere R model versie)
+        print("⚠️  DEBUG: impact_demo_midden kolom NIET gevonden in R output")
+        print(f"   Beschikbare kolommen: {list(jaar_2043.index)[:20]}...")
         return None
+
+    print("✅ DEBUG: impact_analysis data succesvol geëxtraheerd")
 
     return {
         'jaar': 2043,
@@ -608,6 +612,9 @@ def api_scenario():
         # Voeg impact analysis toe als beschikbaar
         if impact_analysis is not None:
             response['impact_analysis'] = impact_analysis
+            print(f"📊 DEBUG: impact_analysis toegevoegd aan response (scenario6={impact_analysis['scenario_totalen']['scenario6']})")
+        else:
+            print("⚠️  DEBUG: impact_analysis is None - NIET toegevoegd aan response")
 
         return jsonify(response)
 

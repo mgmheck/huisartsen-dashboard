@@ -145,6 +145,7 @@ def call_r_model(instroom: float, intern_rendement: float, fte_vrouw: float, fte
             str(int(instroom)),
             str(fte_vrouw),
             str(fte_man),
+            str(intern_rendement),
             # Extern rendement (8 parameters - altijd waarde, geen NA)
             str(extern_rendement_vrouw_1jaar),
             str(extern_rendement_vrouw_5jaar),
@@ -349,9 +350,9 @@ def api_baseline():
         # Roep R model aan met default parameters (met 8 extern rendement en 8 uitstroom waarden)
         df = call_r_model(
             instroom=DEFAULT_PARAMS['instroom'],
-            intern_rendement=DEFAULT_PARAMS['intern_rendement'],
             fte_vrouw=DEFAULT_PARAMS['fte_vrouw'],
             fte_man=DEFAULT_PARAMS['fte_man'],
+            intern_rendement=DEFAULT_PARAMS['intern_rendement'],
             # Extern rendement - 8 individuele parameters
             extern_rendement_vrouw_1jaar=DEFAULT_PARAMS['extern_rendement_vrouw_1jaar'],
             extern_rendement_vrouw_5jaar=DEFAULT_PARAMS['extern_rendement_vrouw_5jaar'],
@@ -645,7 +646,24 @@ def api_test():
         df = call_r_model(
             instroom=DEFAULT_PARAMS['instroom'],
             fte_vrouw=DEFAULT_PARAMS['fte_vrouw'],
-            fte_man=DEFAULT_PARAMS['fte_man']
+            fte_man=DEFAULT_PARAMS['fte_man'],
+            intern_rendement=DEFAULT_PARAMS['intern_rendement'],
+            extern_rendement_vrouw_1jaar=DEFAULT_PARAMS['extern_rendement_vrouw_1jaar'],
+            extern_rendement_vrouw_5jaar=DEFAULT_PARAMS['extern_rendement_vrouw_5jaar'],
+            extern_rendement_vrouw_10jaar=DEFAULT_PARAMS['extern_rendement_vrouw_10jaar'],
+            extern_rendement_vrouw_15jaar=DEFAULT_PARAMS['extern_rendement_vrouw_15jaar'],
+            extern_rendement_man_1jaar=DEFAULT_PARAMS['extern_rendement_man_1jaar'],
+            extern_rendement_man_5jaar=DEFAULT_PARAMS['extern_rendement_man_5jaar'],
+            extern_rendement_man_10jaar=DEFAULT_PARAMS['extern_rendement_man_10jaar'],
+            extern_rendement_man_15jaar=DEFAULT_PARAMS['extern_rendement_man_15jaar'],
+            uitstroom_vrouw_5j=DEFAULT_PARAMS['uitstroom_vrouw_5j'],
+            uitstroom_man_5j=DEFAULT_PARAMS['uitstroom_man_5j'],
+            uitstroom_vrouw_10j=DEFAULT_PARAMS['uitstroom_vrouw_10j'],
+            uitstroom_man_10j=DEFAULT_PARAMS['uitstroom_man_10j'],
+            uitstroom_vrouw_15j=DEFAULT_PARAMS['uitstroom_vrouw_15j'],
+            uitstroom_man_15j=DEFAULT_PARAMS['uitstroom_man_15j'],
+            uitstroom_vrouw_20j=DEFAULT_PARAMS['uitstroom_vrouw_20j'],
+            uitstroom_man_20j=DEFAULT_PARAMS['uitstroom_man_20j']
         )
 
         # Print eerste en laatste rij

@@ -5,7 +5,7 @@ const Dashboard = () => {
   const [selectedMainCategory, setSelectedMainCategory] = useState('zorgaanbod');
   const [selectedSubCategory, setSelectedSubCategory] = useState('zorgaanbod_personen');
   const [hiddenLines, setHiddenLines] = useState({});
-  
+
   // Data uit CSV bestand
   const rawData = {
     zorgaanbod_personen: [
@@ -97,7 +97,7 @@ const Dashboard = () => {
       { id: 'onvervuldevraag', label: 'Onvervulde vraag', icon: '⚠️' }
     ]
   };
-  
+
   const chartData = useMemo(() => {
     const categoryData = rawData[selectedSubCategory];
     if (!categoryData) return [];
@@ -182,7 +182,7 @@ const Dashboard = () => {
   return (
     <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', paddingTop: '2rem', paddingBottom: '2rem' }}>
       <div style={{ maxWidth: '1600px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
-        
+
         {/* Header */}
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '2rem' }}>

@@ -1168,89 +1168,6 @@ const ScenarioModelAPI = () => {
               </div>
             </div>
 
-            {/* ========== SECTIE 4: IMPACTANALYSE - STAAFDIAGRAM ========== */}
-            {impactAnalysis && (() => {
-              // Bereid data voor BarChart
-              const chartData = [
-                // Vraagfactoren
-                { naam: 'Demografie', waarde: Math.round(impactAnalysis.vraagfactoren.demografie), type: 'vraag' },
-                { naam: 'Epidemiologie (t)', waarde: Math.round(impactAnalysis.vraagfactoren.epidemiologie_t), type: 'vraag' },
-                { naam: 'Sociaal-cultureel (t)', waarde: Math.round(impactAnalysis.vraagfactoren.sociaal_cultureel_t), type: 'vraag' },
-                { naam: 'Vakinhoudelijk (t)', waarde: Math.round(impactAnalysis.vraagfactoren.vakinhoudelijk_t), type: 'vraag' },
-                { naam: 'Efficiency (t)', waarde: Math.round(impactAnalysis.vraagfactoren.efficiency_t), type: 'vraag' },
-                { naam: 'Horiz. substitutie (t)', waarde: Math.round(impactAnalysis.vraagfactoren.horizontale_substitutie_t), type: 'vraag' },
-                { naam: 'ATV (t)', waarde: Math.round(impactAnalysis.vraagfactoren.atv_t), type: 'vraag' },
-                { naam: 'Vert. substitutie (t)', waarde: Math.round(impactAnalysis.vraagfactoren.verticale_substitutie_t), type: 'vraag' },
-                // Aanbodfactoren
-                { naam: 'Onvervulde vraag', waarde: Math.round(impactAnalysis.aanbodfactoren.onvervulde_vraag), type: 'aanbod' },
-                { naam: 'Uitstroom', waarde: Math.round(impactAnalysis.aanbodfactoren.uitstroom), type: 'aanbod' },
-                { naam: 'Nu in opleiding', waarde: Math.round(impactAnalysis.aanbodfactoren.nu_in_opleiding), type: 'aanbod' },
-                { naam: 'Tussen opleiding', waarde: Math.round(impactAnalysis.aanbodfactoren.tussen_opleiding), type: 'aanbod' },
-                { naam: 'Instroom buitenland', waarde: Math.round(impactAnalysis.aanbodfactoren.buitenland), type: 'aanbod' },
-              ];
-
-              // Sorteer op absolute waarde (grootste impact eerst)
-              chartData.sort((a, b) => Math.abs(b.waarde) - Math.abs(a.waarde));
-
-              // Functie voor kleur op basis van waarde
-              const getColor = (waarde: number) => {
-                if (waarde > 0) return '#006470'; // PMS_315 blauw voor positief
-                if (waarde < 0) return '#D76628'; // PMS_717 oranje voor negatief
-                return '#999'; // Grijs voor 0
-              };
-
-              return (
-                <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem', border: '2px solid #000', marginTop: '0.5rem' }}>
-                  <h3 style={{ fontSize: '0.875rem', fontWeight: 'bold', color: '#0F2B5B', marginBottom: '0.5rem' }}>
-                    📊 Impactanalyse Instroomadvies ({impactAnalysis.jaar})
-                  </h3>
-
-                  <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '0.75rem' }}>
-                    Bijdrage van factoren aan instroomadvies (in personen)
-                  </div>
-
-                  <ResponsiveContainer width="100%" height={450}>
-                    <BarChart
-                      data={chartData}
-                      layout="vertical"
-                      margin={{ top: 5, right: 60, left: 150, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                      <XAxis type="number" style={{ fontSize: '0.75rem' }} />
-                      <YAxis
-                        type="category"
-                        dataKey="naam"
-                        width={140}
-                        style={{ fontSize: '0.75rem' }}
-                      />
-                      <Tooltip
-                        formatter={(value: any) => [`${value} personen`, 'Impact']}
-                        contentStyle={{ fontSize: '0.75rem' }}
-                      />
-                      <Bar dataKey="waarde" label={{ position: 'right', fontSize: 11 }}>
-                        {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={getColor(entry.waarde)} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-
-                  {/* Totaal en verificatie */}
-                  <div style={{ borderTop: '2px solid #0F2B5B', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', fontWeight: 'bold', color: '#0F2B5B' }}>
-                      <div>Totaal (Scenario 6):</div>
-                      <div>{Math.round(impactAnalysis.scenario_totalen.scenario6)} personen</div>
-                    </div>
-                    {instroomadvies && (
-                      <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.25rem', textAlign: 'right' }}>
-                        Instroomadvies: {Math.round(instroomadvies)} personen
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-
             {/* Reset knop */}
             <button
                 onClick={() => setScenario({
@@ -1551,6 +1468,93 @@ const ScenarioModelAPI = () => {
             </div>
           </div>
         </div>
+
+        {/* ========== IMPACTANALYSE - STAAFDIAGRAM (35% BREED) ========== */}
+        {impactAnalysis && (() => {
+          // Bereid data voor BarChart
+          const chartData = [
+            // Vraagfactoren
+            { naam: 'Demografie', waarde: Math.round(impactAnalysis.vraagfactoren.demografie), type: 'vraag' },
+            { naam: 'Epidemiologie', waarde: Math.round(impactAnalysis.vraagfactoren.epidemiologie_t), type: 'vraag' },
+            { naam: 'Sociaal-cultureel', waarde: Math.round(impactAnalysis.vraagfactoren.sociaal_cultureel_t), type: 'vraag' },
+            { naam: 'Vakinhoudelijk', waarde: Math.round(impactAnalysis.vraagfactoren.vakinhoudelijk_t), type: 'vraag' },
+            { naam: 'Efficiency', waarde: Math.round(impactAnalysis.vraagfactoren.efficiency_t), type: 'vraag' },
+            { naam: 'Horiz. substitutie', waarde: Math.round(impactAnalysis.vraagfactoren.horizontale_substitutie_t), type: 'vraag' },
+            { naam: 'ATV', waarde: Math.round(impactAnalysis.vraagfactoren.atv_t), type: 'vraag' },
+            { naam: 'Vert. substitutie', waarde: Math.round(impactAnalysis.vraagfactoren.verticale_substitutie_t), type: 'vraag' },
+            // Aanbodfactoren
+            { naam: 'Onvervulde vraag', waarde: Math.round(impactAnalysis.aanbodfactoren.onvervulde_vraag), type: 'aanbod' },
+            { naam: 'Uitstroom', waarde: Math.round(impactAnalysis.aanbodfactoren.uitstroom), type: 'aanbod' },
+            { naam: 'Nu in opleiding', waarde: Math.round(impactAnalysis.aanbodfactoren.nu_in_opleiding), type: 'aanbod' },
+            { naam: 'Tussen opleiding', waarde: Math.round(impactAnalysis.aanbodfactoren.tussen_opleiding), type: 'aanbod' },
+            { naam: 'Instroom buitenland', waarde: Math.round(impactAnalysis.aanbodfactoren.buitenland), type: 'aanbod' },
+          ];
+
+          // Sorteer op absolute waarde (grootste impact eerst)
+          chartData.sort((a, b) => Math.abs(b.waarde) - Math.abs(a.waarde));
+
+          // Functie voor kleur op basis van waarde
+          const getColor = (waarde: number) => {
+            if (waarde > 0) return '#006470'; // PMS_315 blauw voor positief
+            if (waarde < 0) return '#D76628'; // PMS_717 oranje voor negatief
+            return '#999'; // Grijs voor 0
+          };
+
+          return (
+            <div style={{ width: '35%', marginTop: '1.5rem' }}>
+              <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem', border: '2px solid #000' }}>
+                <h3 style={{ fontSize: '0.875rem', fontWeight: 'bold', color: '#0F2B5B', marginBottom: '0.5rem' }}>
+                  📊 Impactanalyse Instroomadvies ({impactAnalysis.jaar})
+                </h3>
+
+                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '0.75rem' }}>
+                  Bijdrage van factoren aan instroomadvies (in personen)
+                </div>
+
+                <ResponsiveContainer width="100%" height={450}>
+                  <BarChart
+                    data={chartData}
+                    layout="vertical"
+                    margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" style={{ fontSize: '0.75rem' }} />
+                    <YAxis
+                      type="category"
+                      dataKey="naam"
+                      width={160}
+                      style={{ fontSize: '0.75rem' }}
+                      orientation="left"
+                    />
+                    <Tooltip
+                      formatter={(value: any) => [`${value} personen`, 'Impact']}
+                      contentStyle={{ fontSize: '0.75rem' }}
+                    />
+                    <Bar dataKey="waarde" label={{ position: 'right', fontSize: 11 }}>
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={getColor(entry.waarde)} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+
+                {/* Totaal en verificatie */}
+                <div style={{ borderTop: '2px solid #0F2B5B', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', fontWeight: 'bold', color: '#0F2B5B' }}>
+                    <div>Totaal (Scenario 6):</div>
+                    <div>{Math.round(impactAnalysis.scenario_totalen.scenario6)} personen</div>
+                  </div>
+                  {instroomadvies && (
+                    <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.25rem', textAlign: 'right' }}>
+                      Instroomadvies: {Math.round(instroomadvies)} personen
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
       </div>
     </div>
   );

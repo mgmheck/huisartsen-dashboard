@@ -201,6 +201,64 @@ def call_r_model(instroom: float, intern_rendement: float, fte_vrouw: float, fte
             os.remove(output_file)
 
 
+def extract_impact_analysis(df: pd.DataFrame) -> dict:
+    """
+    Extraheer impactanalyse data voor evenwichtsjaar 2043.
+
+    De impactanalyse decompo neert het instroomadvies in bijdragen van verschillende factoren:
+    - Vraagfactoren: demografie, epidemiologie, sociaal-cultureel, vakinhoudelijk, efficiency,
+                     horizontale substitutie, ATV, verticale substitutie
+    - Aanbodfactoren: onvervulde vraag, uitstroom, nu in opleiding, tussen opleiding, buitenland
+
+    Args:
+        df: DataFrame van R model output (met impact kolommen)
+
+    Returns:
+        Dictionary met impact data voor 2043
+    """
+    # Filter jaar 2043 (evenwichtsjaar)
+    jaar_2043 = df[df['jaar'] == 2043].iloc[0]
+
+    # Controleer of impact kolommen aanwezig zijn
+    if 'impact_demo_midden' not in jaar_2043:
+        # Impact kolommen niet beschikbaar (oudere R model versie)
+        return None
+
+    return {
+        'jaar': 2043,
+        'vraagfactoren': {
+            'demografie': round(jaar_2043.get('impact_demo_midden', 0), 2),
+            'epidemiologie_t': round(jaar_2043.get('impact_epi_midden_t', 0), 2),
+            'epidemiologie_d': round(jaar_2043.get('impact_epi_midden_d', 0), 2),
+            'sociaal_cultureel_t': round(jaar_2043.get('impact_soc_midden_t', 0), 2),
+            'sociaal_cultureel_d': round(jaar_2043.get('impact_soc_midden_d', 0), 2),
+            'vakinhoudelijk_t': round(jaar_2043.get('impact_vak_midden_t', 0), 2),
+            'vakinhoudelijk_d': round(jaar_2043.get('impact_vak_midden_d', 0), 2),
+            'efficiency_t': round(jaar_2043.get('impact_eff_midden_t', 0), 2),
+            'efficiency_d': round(jaar_2043.get('impact_eff_midden_d', 0), 2),
+            'horizontale_substitutie_t': round(jaar_2043.get('impact_hor_midden_t', 0), 2),
+            'horizontale_substitutie_d': round(jaar_2043.get('impact_hor_midden_d', 0), 2),
+            'atv_t': round(jaar_2043.get('impact_atv_midden_t', 0), 2),
+            'atv_d': round(jaar_2043.get('impact_atv_midden_d', 0), 2),
+            'verticale_substitutie_t': round(jaar_2043.get('impact_ver_midden_t', 0), 2),
+            'verticale_substitutie_d': round(jaar_2043.get('impact_ver_midden_d', 0), 2),
+        },
+        'aanbodfactoren': {
+            'onvervulde_vraag': round(jaar_2043.get('impact_ovv_midden', 0), 2),
+            'uitstroom': round(jaar_2043.get('impact_uitstroom', 0), 2),
+            'nu_in_opleiding': round(jaar_2043.get('impact_nuinopl', 0), 2),
+            'tussen_opleiding': round(jaar_2043.get('impact_tussenopl', 0), 2),
+            'buitenland': round(jaar_2043.get('impact_buitenland', 0), 2),
+        },
+        'scenario_totalen': {
+            'scenario1': round(jaar_2043.get('totaal_impact_sc1_midden', 0), 2),
+            'scenario2': round(jaar_2043.get('totaal_impact_sc2_midden', 0), 2),
+            'scenario3': round(jaar_2043.get('totaal_impact_sc3_midden', 0), 2),
+            'scenario6': round(jaar_2043.get('totaal_impact_sc6_midden', 0), 2),
+        }
+    }
+
+
 def dataframe_to_projectie_json(df: pd.DataFrame, scenario: str = 'scenario6') -> list:
     """
     Converteer DataFrame naar JSON formaat voor frontend.
@@ -521,6 +579,9 @@ def api_scenario():
         # Converteer naar JSON
         projectie = dataframe_to_projectie_json(df, scenario=scenario)
 
+        # Haal impact analyse data op voor evenwichtsjaar 2043
+        impact_analysis = extract_impact_analysis(df)
+
         # Bereken instroomadvies voor evenwichtsjaar 2043
         #
         # BELANGRIJK: Instroomadvies wordt berekend door het R-model (run_scenario_api_v2.R)
@@ -538,10 +599,17 @@ def api_scenario():
         jaar_2043_scenario = df[df['jaar'] == 2043].iloc[0]
         instroomadvies = jaar_2043_scenario['ben_instroom_sc6_midden_a']
 
-        return jsonify({
+        # Bouw response met optionele impact_analysis
+        response = {
             'projectie': projectie,
             'instroomadvies_2043': round(instroomadvies, 0) if instroomadvies else None
-        })
+        }
+
+        # Voeg impact analysis toe als beschikbaar
+        if impact_analysis is not None:
+            response['impact_analysis'] = impact_analysis
+
+        return jsonify(response)
 
     except Exception as e:
         # Uitgebreide error logging

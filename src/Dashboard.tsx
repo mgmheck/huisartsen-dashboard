@@ -1,73 +1,181 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import Papa from 'papaparse';
 
 const Dashboard = () => {
   const [selectedMainCategory, setSelectedMainCategory] = useState('zorgaanbod');
   const [selectedSubCategory, setSelectedSubCategory] = useState('zorgaanbod_personen');
   const [hiddenLines, setHiddenLines] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [csvData, setCsvData] = useState({});
 
-  // Data uit CSV bestand
-  const rawData = {
-    zorgaanbod_personen: [
-      { var: 'aanbod_personen', label: 'Werkzame huisartsen', data: [10371, 11133, 11821, 12766, 13492, 14347] },
-      { var: 'werkzame_vrouwen', label: 'Werkzame vrouwen', data: [4345, 5054, 6194, 7366, 8230, 9469] },
-      { var: 'werkzame_mannen', label: 'Werkzame mannen', data: [6026, 6079, 5627, 5400, 5262, 4878] }
-    ],
-    zorgaanbod_fte: [
-      { var: 'fte_werkzaam', label: 'FTE werkzame huisartsen', data: [7348, 8280, 8809, 9495, 10211, 10769] },
-      { var: 'fte_werkzame_vrouwen', label: 'FTE werkzame vrouwen', data: [2394, 3235, 4026, 5230, 5843, 6818] },
-      { var: 'fte_werkzame_mannen', label: 'FTE werkzame mannen', data: [4953, 5046, 4783, 4266, 4367, 3951] }
-    ],
-    zorgaanbod_percentage: [
-      { var: 'werkzame_vrouwen', label: 'Werkzame vrouwen', data: [4345, 5054, 6194, 7366, 8230, 9469] },
-      { var: 'werkzame_mannen', label: 'Werkzame mannen', data: [6026, 6079, 5627, 5400, 5262, 4878] }
-    ],
-    ftefactor: [
-      { var: 'fte_totaal_basis', label: 'FTE factor totaal (%)', data: [70.85, 74.37, 74.52, 74.38, 75.68, 75.06] },
-      { var: 'fte_vrouw_basis', label: 'FTE factor vrouw (%)', data: [55.1, 64.0, 65.0, 71.0, 71.0, 72.0] },
-      { var: 'fte_man_basis', label: 'FTE factor man (%)', data: [82.2, 83.0, 85.0, 79.0, 83.0, 81.0] }
-    ],
-    uitstroom: [
-      { var: 'uitstroom_man_basis_vijf', label: 'Uitstroom 5j man (%)', data: [18.9, 13.1, 15.4, 13.2, 17.0, 22.6] },
-      { var: 'uitstroom_vrouw_basis_vijf', label: 'Uitstroom 5j vrouw (%)', data: [8.4, 6.3, 6.0, 5.0, 6.0, 11.6] },
-      { var: 'uitstroom_totaal_vijf', label: 'Uitstroom 5j totaal (%)', data: [14.5, 10.0, 10.5, 8.5, 10.3, 15.3] },
-      { var: 'uitstroom_man_basis_tien', label: 'Uitstroom 10j man (%)', data: [38.2, 29.3, 28.7, 33.6, 36.0, 37.3] },
-      { var: 'uitstroom_vrouw_basis_tien', label: 'Uitstroom 10j vrouw (%)', data: [19.2, 15.8, 12.9, 14.3, 16.0, 23.2] },
-      { var: 'uitstroom_totaal_tien', label: 'Uitstroom 10j totaal (%)', data: [30.2, 23.2, 20.4, 22.5, 23.8, 28.0] },
-      { var: 'uitstroom_man_basis_vijftien', label: 'Uitstroom 15j man (%)', data: [54.6, 43.7, 43.5, 48.1, 53.0, 50.2] },
-      { var: 'uitstroom_vrouw_basis_vijftien', label: 'Uitstroom 15j vrouw (%)', data: [31.3, 26.6, 22.6, 24.9, 28.0, 37.1] },
-      { var: 'uitstroom_totaal_vijftien', label: 'Uitstroom 15j totaal (%)', data: [44.8, 35.9, 32.5, 34.7, 37.8, 41.6] },
-      { var: 'uitstroom_man_basis_twintig', label: 'Uitstroom 20j man (%)', data: [67.9, 56.3, 56.7, 60.0, 65.0, 63.2] },
-      { var: 'uitstroom_vrouw_basis_twintig', label: 'Uitstroom 20j vrouw (%)', data: [44.3, 38.9, 34.2, 37.7, 37.0, 51.0] },
-      { var: 'uitstroom_totaal_twintig', label: 'Uitstroom 20j totaal (%)', data: [58.0, 48.4, 44.9, 47.1, 47.9, 55.1] }
-    ],
-    opleiding: [
-      { var: 'n_inopleiding_perjaar', label: 'Instroom per jaar', data: [513, 602, 707, 719, 798, 718] }
-    ],
-    opleidingdetails: [
-      { var: 'per_vrouw_opleiding', label: '% vrouwen opleiding', data: [71.3, 76.0, 77.5, 74.6, 73.7, 74.0] },
-      { var: 'intern_rendement', label: 'Intern rendement (%)', data: [98.0, 98.0, 98.0, 98.0, 94.3, 94.0] }
-    ],
-    zorgvraag: [
-      { var: 'epi_midden', label: 'Epidemiologie (%)', data: [0.3, 0.3, 0.4, 0.4, 0.7, 1.0] },
-      { var: 'sociaal_midden', label: 'Sociaal-cultureel (%)', data: [0.5, 0.7, 0.8, 0.8, 1.2, 1.9] },
-      { var: 'vakinh_midden', label: 'Vakinhoudelijk (%)', data: [0.1, 0.1, 0.1, 0.2, 0.8, -0.3] },
-      { var: 'effic_midden', label: 'Efficiency (%)', data: [0.2, 0.3, 0, 0.3, 0.4, -0.5] },
-      { var: 'horsub_midden', label: 'Horizontale substitutie (%)', data: [0.5, 1.0, 1.2, 1.0, 1.4, 1.6] },
-      { var: 'atv_midden', label: 'ATV (%)', data: [0, 0, 0, 0.8, 1.5, 0] },
-      { var: 'vertsub_midden', label: 'Verticale substitutie (%)', data: [-0.6, -0.6, -1.0, -0.6, -1.0, -1.1] },
-      { var: 'totale_zorgvraag_excl_ATV_midden', label: 'Totale zorgvraag excl ATV (%)', data: [1.0, 1.8, 1.5, 2.1, 3.6, 2.6] }
-    ],
-    demografie: [
-      { var: 'demo_5_midden', label: 'Demografie 5j (%)', data: [3.1, 3.5, 4.9, 6.0, 5.8, 4.3] },
-      { var: 'demo_10_midden', label: 'Demografie 10j (%)', data: [6.0, 7.1, 9.4, 11.4, 10.8, 8.6] },
-      { var: 'demo_15_midden', label: 'Demografie 15j (%)', data: [8.4, 10.6, 13.5, 16.0, 14.8, 12.1] },
-      { var: 'demo_20_midden', label: 'Demografie 20j (%)', data: [10.4, 13.3, 17.2, 19.5, 17.9, 14.8] }
-    ],
-    onvervuldevraag: [
-      { var: 'onv_vraag_midden', label: 'Onvervulde vraag (%)', data: [1.0, 0, 0, 3.0, 8.0, 6.3] }
-    ]
+  // Laad CSV data bij component mount
+  useEffect(() => {
+    const loadCSVData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/data/parameterwaarden.csv');
+        const csvText = await response.text();
+
+        Papa.parse(csvText, {
+          header: true,
+          delimiter: ';',
+          dynamicTyping: false,
+          skipEmptyLines: true,
+          complete: (results) => {
+            // Maak lookup object: variabele naam -> row data
+            const lookup = {};
+            results.data.forEach(row => {
+              if (row.Variabele) {
+                lookup[row.Variabele] = row;
+              }
+            });
+            setCsvData(lookup);
+            setIsLoading(false);
+          },
+          error: (err) => {
+            setError('Fout bij laden CSV: ' + err.message);
+            setIsLoading(false);
+          }
+        });
+      } catch (err) {
+        setError('Fout bij laden CSV: ' + err.message);
+        setIsLoading(false);
+      }
+    };
+
+    loadCSVData();
+  }, []);
+
+  // Helper functie om CSV waarde te parsen (komma -> punt voor decimalen)
+  const parseValue = (val) => {
+    if (!val || val === '') return 0;
+    if (typeof val === 'number') return val;
+    const str = val.toString().replace(',', '.');
+    const parsed = parseFloat(str);
+    return isNaN(parsed) ? 0 : parsed;
   };
+
+  // Helper functie om data array te extraheren uit CSV row
+  const getDataArray = (variableName) => {
+    const row = csvData[variableName];
+    if (!row) return [0, 0, 0, 0, 0, 0];
+    return [
+      parseValue(row.raming_2010),
+      parseValue(row.raming_2013),
+      parseValue(row.raming_2016),
+      parseValue(row.raming_2019_demo),
+      parseValue(row.raming_2022),
+      parseValue(row.raming_2025)
+    ];
+  };
+
+  // Bereken afgeleide data (werkzame vrouwen/mannen, FTE, etc.)
+  const calculateDerivedData = () => {
+    if (Object.keys(csvData).length === 0) {
+      return null; // Nog geen data geladen
+    }
+
+    const aanbod_personen = getDataArray('aanbod_personen');
+    const per_vrouw_basis = getDataArray('per_vrouw_basis');
+    const per_man_basis = per_vrouw_basis.map(v => 1 - v); // Mannen = 1 - vrouwen
+    const fte_totaal_basis = getDataArray('fte_totaal_basis');
+    const fte_vrouw_basis = getDataArray('fte_vrouw_basis');
+    const fte_man_basis = getDataArray('fte_man_basis');
+
+    // Bereken werkzame vrouwen/mannen
+    const werkzame_vrouwen = aanbod_personen.map((val, idx) => Math.round(val * per_vrouw_basis[idx]));
+    const werkzame_mannen = aanbod_personen.map((val, idx) => Math.round(val * per_man_basis[idx]));
+
+    // Bereken FTE werkzaam
+    const fte_werkzaam = aanbod_personen.map((val, idx) => Math.round(val * fte_totaal_basis[idx]));
+    const fte_werkzame_vrouwen = werkzame_vrouwen.map((val, idx) => Math.round(val * fte_vrouw_basis[idx]));
+    const fte_werkzame_mannen = werkzame_mannen.map((val, idx) => Math.round(val * fte_man_basis[idx]));
+
+    return {
+      aanbod_personen,
+      werkzame_vrouwen,
+      werkzame_mannen,
+      fte_werkzaam,
+      fte_werkzame_vrouwen,
+      fte_werkzame_mannen,
+      fte_totaal_basis: fte_totaal_basis.map(v => v * 100), // Percentage
+      fte_vrouw_basis: fte_vrouw_basis.map(v => v * 100),
+      fte_man_basis: fte_man_basis.map(v => v * 100)
+    };
+  };
+
+  const derivedData = calculateDerivedData();
+
+  // Data uit CSV bestand (dynamisch geladen)
+  const rawData = useMemo(() => {
+    if (!derivedData) {
+      return {}; // Fallback lege data als CSV nog niet geladen
+    }
+
+    return {
+      zorgaanbod_personen: [
+        { var: 'aanbod_personen', label: 'Werkzame huisartsen', data: derivedData.aanbod_personen },
+        { var: 'werkzame_vrouwen', label: 'Werkzame vrouwen', data: derivedData.werkzame_vrouwen },
+        { var: 'werkzame_mannen', label: 'Werkzame mannen', data: derivedData.werkzame_mannen }
+      ],
+      zorgaanbod_fte: [
+        { var: 'fte_werkzaam', label: 'FTE werkzame huisartsen', data: derivedData.fte_werkzaam },
+        { var: 'fte_werkzame_vrouwen', label: 'FTE werkzame vrouwen', data: derivedData.fte_werkzame_vrouwen },
+        { var: 'fte_werkzame_mannen', label: 'FTE werkzame mannen', data: derivedData.fte_werkzame_mannen }
+      ],
+      zorgaanbod_percentage: [
+        { var: 'werkzame_vrouwen', label: 'Werkzame vrouwen', data: derivedData.werkzame_vrouwen },
+        { var: 'werkzame_mannen', label: 'Werkzame mannen', data: derivedData.werkzame_mannen }
+      ],
+      ftefactor: [
+        { var: 'fte_totaal_basis', label: 'FTE factor totaal (%)', data: derivedData.fte_totaal_basis },
+        { var: 'fte_vrouw_basis', label: 'FTE factor vrouw (%)', data: derivedData.fte_vrouw_basis },
+        { var: 'fte_man_basis', label: 'FTE factor man (%)', data: derivedData.fte_man_basis }
+      ],
+      uitstroom: [
+        { var: 'uitstroom_man_basis_vijf', label: 'Uitstroom 5j man (%)', data: getDataArray('uitstroom_man_basis_vijf').map(v => v * 100) },
+        { var: 'uitstroom_vrouw_basis_vijf', label: 'Uitstroom 5j vrouw (%)', data: getDataArray('uitstroom_vrouw_basis_vijf').map(v => v * 100) },
+        { var: 'uitstroom_totaal_vijf', label: 'Uitstroom 5j totaal (%)', data: getDataArray('uitstroom_totaal_basis_vijf').map(v => v * 100) },
+        { var: 'uitstroom_man_basis_tien', label: 'Uitstroom 10j man (%)', data: getDataArray('uitstroom_man_basis_tien').map(v => v * 100) },
+        { var: 'uitstroom_vrouw_basis_tien', label: 'Uitstroom 10j vrouw (%)', data: getDataArray('uitstroom_vrouw_basis_tien').map(v => v * 100) },
+        { var: 'uitstroom_totaal_tien', label: 'Uitstroom 10j totaal (%)', data: getDataArray('uitstroom_totaal_basis_tien').map(v => v * 100) },
+        { var: 'uitstroom_man_basis_vijftien', label: 'Uitstroom 15j man (%)', data: getDataArray('uitstroom_man_basis_vijftien').map(v => v * 100) },
+        { var: 'uitstroom_vrouw_basis_vijftien', label: 'Uitstroom 15j vrouw (%)', data: getDataArray('uitstroom_vrouw_basis_vijftien').map(v => v * 100) },
+        { var: 'uitstroom_totaal_vijftien', label: 'Uitstroom 15j totaal (%)', data: getDataArray('uitstroom_totaal_basis_vijftien').map(v => v * 100) },
+        { var: 'uitstroom_man_basis_twintig', label: 'Uitstroom 20j man (%)', data: getDataArray('uitstroom_man_basis_twintig').map(v => v * 100) },
+        { var: 'uitstroom_vrouw_basis_twintig', label: 'Uitstroom 20j vrouw (%)', data: getDataArray('uitstroom_vrouw_basis_twintig').map(v => v * 100) },
+        { var: 'uitstroom_totaal_twintig', label: 'Uitstroom 20j totaal (%)', data: getDataArray('uitstroom_totaal_basis_twintig').map(v => v * 100) }
+      ],
+      opleiding: [
+        { var: 'n_inopleiding_perjaar', label: 'Instroom per jaar', data: getDataArray('n_inopleiding_perjaar') }
+      ],
+      opleidingdetails: [
+        { var: 'per_vrouw_opleiding', label: '% vrouwen opleiding', data: getDataArray('per_vrouw_opleiding').map(v => v * 100) },
+        { var: 'intern_rendement', label: 'Intern rendement (%)', data: getDataArray('intern_rendement').map(v => v * 100) }
+      ],
+      zorgvraag: [
+        { var: 'epi_midden', label: 'Epidemiologie (%)', data: getDataArray('epi_midden').map(v => v * 100) },
+        { var: 'sociaal_midden', label: 'Sociaal-cultureel (%)', data: getDataArray('sociaal_midden').map(v => v * 100) },
+        { var: 'vakinh_midden', label: 'Vakinhoudelijk (%)', data: getDataArray('vakinh_midden').map(v => v * 100) },
+        { var: 'effic_midden', label: 'Efficiency (%)', data: getDataArray('effic_midden').map(v => v * 100) },
+        { var: 'horsub_midden', label: 'Horizontale substitutie (%)', data: getDataArray('horsub_midden').map(v => v * 100) },
+        { var: 'atv_midden', label: 'ATV (%)', data: getDataArray('atv_midden').map(v => v * 100) },
+        { var: 'vertsub_midden', label: 'Verticale substitutie (%)', data: getDataArray('vertsub_midden').map(v => v * 100) },
+        { var: 'totale_zorgvraag_excl_ATV_midden', label: 'Totale zorgvraag excl ATV (%)', data: getDataArray('totale_zorgvraag_excl_ATV_midden').map(v => v * 100) }
+      ],
+      demografie: [
+        { var: 'demo_5_midden', label: 'Demografie 5j (%)', data: getDataArray('demo_5_midden').map(v => v * 100) },
+        { var: 'demo_10_midden', label: 'Demografie 10j (%)', data: getDataArray('demo_10_midden').map(v => v * 100) },
+        { var: 'demo_15_midden', label: 'Demografie 15j (%)', data: getDataArray('demo_15_midden').map(v => v * 100) },
+        { var: 'demo_20_midden', label: 'Demografie 20j (%)', data: getDataArray('demo_20_midden').map(v => v * 100) }
+      ],
+      onvervuldevraag: [
+        { var: 'onv_vraag_midden', label: 'Onvervulde vraag (%)', data: getDataArray('onv_vraag_midden').map(v => v * 100) }
+      ]
+    };
+  }, [csvData, derivedData]);
   
   const years = ['2010', '2013', '2016', '2019', '2022', '2025'];
   
@@ -171,14 +279,78 @@ const Dashboard = () => {
     return { stroke: colors[index % colors.length], strokeWidth: 2, strokeDasharray: 'none' };
   };
   
-  // KPI data berekeningen
-  const kpiData = [
-    { label: 'Totaal huisartsen 2025', value: '14.347', change: '+6%', subtext: 't.o.v. 2010' },
-    { label: 'FTE 2025', value: '10.769', change: '+47%', subtext: 't.o.v. 2010' },
-    { label: 'Vrouwen 2025', value: '9.469 (66%)', change: '+118%', subtext: 't.o.v. 2010' },
-    { label: 'Zorgvraag 2025', value: '2,6%', change: '+2,6%', subtext: 'excl. ATV' }
-  ];
-  
+  // KPI data berekeningen (dynamisch uit CSV)
+  const kpiData = useMemo(() => {
+    if (!derivedData) {
+      return [
+        { label: 'Totaal huisartsen 2025', value: '...', change: '...', subtext: 't.o.v. 2010' },
+        { label: 'FTE 2025', value: '...', change: '...', subtext: 't.o.v. 2010' },
+        { label: 'Vrouwen 2025', value: '...', change: '...', subtext: 't.o.v. 2010' },
+        { label: 'Zorgvraag 2025', value: '...', change: '...', subtext: 'excl. ATV' }
+      ];
+    }
+
+    const aanbod_2010 = derivedData.aanbod_personen[0];
+    const aanbod_2025 = derivedData.aanbod_personen[5];
+    const fte_2010 = derivedData.fte_werkzaam[0];
+    const fte_2025 = derivedData.fte_werkzaam[5];
+    const vrouwen_2010 = derivedData.werkzame_vrouwen[0];
+    const vrouwen_2025 = derivedData.werkzame_vrouwen[5];
+    const zorgvraag_2025 = getDataArray('totale_zorgvraag_excl_ATV_midden')[5] * 100;
+
+    const aanbod_change = ((aanbod_2025 - aanbod_2010) / aanbod_2010 * 100).toFixed(0);
+    const fte_change = ((fte_2025 - fte_2010) / fte_2010 * 100).toFixed(0);
+    const vrouwen_change = ((vrouwen_2025 - vrouwen_2010) / vrouwen_2010 * 100).toFixed(0);
+    const vrouwen_percentage = (vrouwen_2025 / aanbod_2025 * 100).toFixed(0);
+
+    return [
+      { label: 'Totaal huisartsen 2025', value: aanbod_2025.toLocaleString('nl-NL'), change: `+${aanbod_change}%`, subtext: 't.o.v. 2010' },
+      { label: 'FTE 2025', value: fte_2025.toLocaleString('nl-NL'), change: `+${fte_change}%`, subtext: 't.o.v. 2010' },
+      { label: 'Vrouwen 2025', value: `${vrouwen_2025.toLocaleString('nl-NL')} (${vrouwen_percentage}%)`, change: `+${vrouwen_change}%`, subtext: 't.o.v. 2010' },
+      { label: 'Zorgvraag 2025', value: `${zorgvraag_2025.toFixed(1)}%`, change: `+${zorgvraag_2025.toFixed(1)}%`, subtext: 'excl. ATV' }
+    ];
+  }, [derivedData]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
+          <h2 style={{ color: '#006583', marginBottom: '0.5rem' }}>Dashboard wordt geladen...</h2>
+          <p style={{ color: '#666' }}>CSV data wordt ingelezen</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', maxWidth: '600px', padding: '2rem' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+          <h2 style={{ color: '#D76628', marginBottom: '0.5rem' }}>Fout bij laden dashboard</h2>
+          <p style={{ color: '#666', marginBottom: '1rem' }}>{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#006470',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontSize: '1rem'
+            }}
+          >
+            Opnieuw proberen
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', paddingTop: '2rem', paddingBottom: '2rem' }}>
       <div style={{ maxWidth: '1600px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>

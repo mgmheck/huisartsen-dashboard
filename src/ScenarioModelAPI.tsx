@@ -132,6 +132,7 @@ const ScenarioModelAPI = () => {
   const [projectie, setProjectie] = useState<ProjectieData[]>([]);
   const [baseline, setBaseline] = useState<ProjectieData[]>([]);
   const [instroomadvies, setInstroomadvies] = useState<number | null>(null);
+  const [impactAnalysis, setImpactAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiConnected, setApiConnected] = useState(false);
@@ -240,6 +241,7 @@ const ScenarioModelAPI = () => {
       const data = await response.json();
       setProjectie(data.projectie);
       setInstroomadvies(data.instroomadvies_2043 || null);
+      setImpactAnalysis(data.impact_analysis || null);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -1157,6 +1159,89 @@ const ScenarioModelAPI = () => {
                 </div>
               </div>
             </div>
+
+            {/* ========== SECTIE 4: IMPACTANALYSE ========== */}
+            {impactAnalysis && (
+              <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem', border: '2px solid #000', marginTop: '0.5rem' }}>
+                <div style={{ paddingTop: '0', marginTop: '0', marginBottom: '0.5rem' }}>
+                  <h3 style={{ fontSize: '0.875rem', fontWeight: 'bold', color: '#0F2B5B', marginBottom: '0.5rem' }}>
+                    📊 Impactanalyse Instroomadvies ({impactAnalysis.jaar})
+                  </h3>
+
+                  <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '0.75rem' }}>
+                    Deze analyse toont de bijdrage van verschillende factoren aan het instroomadvies
+                  </div>
+
+                  {/* Vraagfactoren */}
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#0F2B5B', marginBottom: '0.5rem' }}>
+                      🔼 Vraagfactoren
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.25rem', fontSize: '0.75rem' }}>
+                      <div>Demografie:</div>
+                      <div style={{ textAlign: 'right', fontWeight: '500' }}>+{Math.round(impactAnalysis.vraagfactoren.demografie)} pers</div>
+
+                      <div>Epidemiologie (tijdelijk):</div>
+                      <div style={{ textAlign: 'right', fontWeight: '500' }}>+{Math.round(impactAnalysis.vraagfactoren.epidemiologie_t)} pers</div>
+
+                      <div>Sociaal-cultureel (tijdelijk):</div>
+                      <div style={{ textAlign: 'right', fontWeight: '500' }}>{Math.round(impactAnalysis.vraagfactoren.sociaal_cultureel_t) > 0 ? '+' : ''}{Math.round(impactAnalysis.vraagfactoren.sociaal_cultureel_t)} pers</div>
+
+                      <div>Vakinhoudelijk (tijdelijk):</div>
+                      <div style={{ textAlign: 'right', fontWeight: '500' }}>{Math.round(impactAnalysis.vraagfactoren.vakinhoudelijk_t) > 0 ? '+' : ''}{Math.round(impactAnalysis.vraagfactoren.vakinhoudelijk_t)} pers</div>
+
+                      <div>Efficiency (tijdelijk):</div>
+                      <div style={{ textAlign: 'right', fontWeight: '500' }}>{Math.round(impactAnalysis.vraagfactoren.efficiency_t) > 0 ? '+' : ''}{Math.round(impactAnalysis.vraagfactoren.efficiency_t)} pers</div>
+
+                      <div>Horizontale substitutie (tijdelijk):</div>
+                      <div style={{ textAlign: 'right', fontWeight: '500' }}>{Math.round(impactAnalysis.vraagfactoren.horizontale_substitutie_t) > 0 ? '+' : ''}{Math.round(impactAnalysis.vraagfactoren.horizontale_substitutie_t)} pers</div>
+
+                      <div>ATV (tijdelijk):</div>
+                      <div style={{ textAlign: 'right', fontWeight: '500' }}>{Math.round(impactAnalysis.vraagfactoren.atv_t) > 0 ? '+' : ''}{Math.round(impactAnalysis.vraagfactoren.atv_t)} pers</div>
+
+                      <div>Verticale substitutie (tijdelijk):</div>
+                      <div style={{ textAlign: 'right', fontWeight: '500' }}>{Math.round(impactAnalysis.vraagfactoren.verticale_substitutie_t) > 0 ? '+' : ''}{Math.round(impactAnalysis.vraagfactoren.verticale_substitutie_t)} pers</div>
+                    </div>
+                  </div>
+
+                  {/* Aanbodfactoren */}
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#0F2B5B', marginBottom: '0.5rem' }}>
+                      🔽 Aanbodfactoren
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.25rem', fontSize: '0.75rem' }}>
+                      <div>Onvervulde vraag (vacatures):</div>
+                      <div style={{ textAlign: 'right', fontWeight: '500' }}>+{Math.round(impactAnalysis.aanbodfactoren.onvervulde_vraag)} pers</div>
+
+                      <div>Uitstroom:</div>
+                      <div style={{ textAlign: 'right', fontWeight: '500' }}>+{Math.round(impactAnalysis.aanbodfactoren.uitstroom)} pers</div>
+
+                      <div>Nu in opleiding (cohort 1):</div>
+                      <div style={{ textAlign: 'right', fontWeight: '500' }}>{Math.round(impactAnalysis.aanbodfactoren.nu_in_opleiding)} pers</div>
+
+                      <div>Tussen opleiding (cohort 2):</div>
+                      <div style={{ textAlign: 'right', fontWeight: '500' }}>{Math.round(impactAnalysis.aanbodfactoren.tussen_opleiding)} pers</div>
+
+                      <div>Instroom buitenland:</div>
+                      <div style={{ textAlign: 'right', fontWeight: '500' }}>{Math.round(impactAnalysis.aanbodfactoren.buitenland)} pers</div>
+                    </div>
+                  </div>
+
+                  {/* Totaal */}
+                  <div style={{ borderTop: '2px solid #0F2B5B', paddingTop: '0.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold', color: '#0F2B5B' }}>
+                      <div>Totaal (Scenario 6):</div>
+                      <div style={{ textAlign: 'right' }}>{Math.round(impactAnalysis.scenario_totalen.scenario6)} pers</div>
+                    </div>
+                    {instroomadvies && (
+                      <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.25rem', textAlign: 'right' }}>
+                        (Instroomadvies: {Math.round(instroomadvies)} personen)
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Reset knop */}
             <button

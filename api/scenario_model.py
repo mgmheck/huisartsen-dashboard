@@ -26,13 +26,16 @@ import sys
 # CONFIGURATIE
 # ==================================================================================
 
-# Paden
-R_SCRIPT_PATH = Path("/Users/mgmheck/Library/CloudStorage/OneDrive-Capaciteitsorgaan/040 - 049 HA/047 Capaciteitsplan/Capaciteitsplan 2025-2030/Visuals/Scripts/run_scenario_api_v2.R")
-DATA_PATH = Path("/Users/mgmheck/Library/CloudStorage/OneDrive-Capaciteitsorgaan/040 - 049 HA/046 Data en analyse/2025-10-22_Parameterwaarden-2010-2013-2016-2019-2025_DEF.csv")
+# Paden - gebruik environment variables voor productie, fallback naar lokale paths
+R_SCRIPT_PATH = Path(os.getenv('R_SCRIPT_PATH', "/Users/mgmheck/Library/CloudStorage/OneDrive-Capaciteitsorgaan/040 - 049 HA/047 Capaciteitsplan/Capaciteitsplan 2025-2030/Visuals/Scripts/run_scenario_api_v2.R"))
+DATA_PATH = Path(os.getenv('DATA_PATH', "/Users/mgmheck/Library/CloudStorage/OneDrive-Capaciteitsorgaan/040 - 049 HA/046 Data en analyse/2025-10-22_Parameterwaarden-2010-2013-2016-2019-2025_DEF.csv"))
 
 # Flask app
 app = Flask(__name__)
 CORS(app)
+
+# Port configuratie
+PORT = int(os.getenv('PORT', 5001))
 
 # Default parameters (from CSV)
 DEFAULT_PARAMS = {
@@ -713,10 +716,10 @@ if __name__ == '__main__':
     print(f"   Exists: {DATA_PATH.exists()}")
     print(f"")
     print(f"🌐 API endpoints:")
-    print(f"   - http://localhost:5001/health (GET)")
-    print(f"   - http://localhost:5001/api/baseline (GET)")
-    print(f"   - http://localhost:5001/api/scenario (POST)")
-    print(f"   - http://localhost:5001/api/test (GET) - debug endpoint")
+    print(f"   - http://localhost:{PORT}/health (GET)")
+    print(f"   - http://localhost:{PORT}/api/baseline (GET)")
+    print(f"   - http://localhost:{PORT}/api/scenario (POST)")
+    print(f"   - http://localhost:{PORT}/api/test (GET) - debug endpoint")
     print("=" * 80)
     print()
     print("✅ Deze API roept het GEVALIDEERDE R model aan")
@@ -725,4 +728,10 @@ if __name__ == '__main__':
     print("=" * 80)
     print()
 
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    # Production mode: gebruik gunicorn
+    # Development mode: gebruik Flask development server
+    is_production = os.getenv('FLASK_ENV') == 'production'
+
+    if not is_production:
+        app.run(debug=True, host='0.0.0.0', port=PORT)
+    # In production, gunicorn wordt gebruikt (zie Dockerfile CMD)

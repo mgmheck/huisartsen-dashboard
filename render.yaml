@@ -1,0 +1,43 @@
+# Render.com Configuration
+# Capaciteitsplan Huisartsen Dashboard
+# Frontend (React) + Backend (Python Flask + R)
+
+services:
+  # ========================================
+  # FRONTEND: React Static Site
+  # ========================================
+  - type: web
+    name: huisartsen-dashboard-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REACT_APP_API_URL
+        fromService:
+          type: web
+          name: huisartsen-dashboard-backend
+          property: host
+
+  # ========================================
+  # BACKEND: Python Flask + R
+  # ========================================
+  - type: web
+    name: huisartsen-dashboard-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATA_PATH
+        value: /app/data/parameterwaarden.csv
+      - key: R_SCRIPT_PATH
+        value: /app/r_scripts/run_scenario_api_v2.R

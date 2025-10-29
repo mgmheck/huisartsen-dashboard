@@ -4,7 +4,9 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-This is a React dashboard application visualizing healthcare capacity planning data for Dutch general practitioners (Huisartsen) from 2010-2025. It displays trends in care supply (zorgaanbod), training (opleiding), and care demand (zorgvraag).
+This is a React dashboard application visualizing healthcare capacity planning data for Dutch general practitioners (Huisartsen) from 2010-2043. It displays trends in care supply (zorgaanbod), training (opleiding), and care demand (zorgvraag).
+
+The application has been **recently refactored** (October 2025) for better maintainability, reusability, and code quality.
 
 ## Key Commands
 
@@ -15,61 +17,140 @@ npm test               # Run tests in watch mode
 npm run build          # Create production build in /build folder
 ```
 
-## Architecture
+### Python API (for Scenario Model)
+```bash
+cd api
+source venv/bin/activate
+python scenario_model.py   # Start Flask API on port 5001
+```
 
-### Application Structure
-- **Single-page dashboard**: The entire application is contained in `Dashboard.tsx`, which is a monolithic component rendering all visualizations
-- **Entry point**: `src/index.js` → `App.js` → `Dashboard.tsx`
-- **No routing**: Single view with dynamic content switching via state
+## Architecture Overview
 
-### Data Model
-- **Hardcoded data**: All data is embedded directly in `Dashboard.tsx` in the `rawData` object
-- **Data structure**: Organized by categories (e.g., `zorgaanbod_personen`, `ftefactor`, `uitstroom`) with each containing metrics that have labels and data arrays for years 2010, 2013, 2016, 2019, 2022, 2025
-- **No external data sources**: Data comes from `20251022_Parameterwaarden20102013201620192025_DEF.csv` but is hardcoded, not fetched
+### Application Structure (REFACTORED - Oct 2025)
 
-### UI Components
-- **Navigation**: Two-level navigation system with main categories (Zorgaanbod, Opleiding, Zorgvraag) and subcategories
-- **Visualizations**: Uses Recharts library for LineChart and BarChart components
-- **KPI tiles**: Four summary metrics displayed at the top
-- **Interactive features**: 
-  - Click main categories to expand/collapse subcategories
-  - Click legend items on zorgvraag and uitstroom charts to show/hide lines
-  - State managed with `hiddenLines` object
+The codebase is now organized in a **modular architecture**:
+
+```
+src/
+├── components/           # Reusable UI components (NEW)
+├── data/                 # Data configuration (NEW)
+├── styles/               # Style constants (NEW)
+├── utils/                # Utility functions (NEW)
+├── Dashboard.tsx         # Historical data view (REFACTORED)
+├── ScenarioModelAPI.tsx  # Interactive scenario model (REFACTORED)
+└── App.js                # Main app with navigation
+```
+
+### Entry Point
+```
+src/index.js → App.js → Dashboard.tsx | ScenarioModelAPI.tsx
+```
+
+### Routing
+- **No routing library**: Single view with tab-based navigation
+- **App.js** manages view switching between Dashboard and Scenario Model
+
+## Code Organization
+
+### Components (`src/components/`)
+
+**Reusable UI components** extracted from original monolithic files:
+
+1. **`NumberInputWithSlider.tsx`** - Integrated number input + range slider (used 33× in ScenarioModelAPI)
+2. **`KPICard.tsx`** - Card component for Key Performance Indicators
+3. **`SectionHeader.tsx`** - Section header with optional reset button
+
+### Data (`src/data/`)
+
+**Centralized data configuration**:
+
+1. **`capacity-data.ts`** - All historical data from CSV (2010-2025)
+2. **`baseline-config.ts`** - Baseline scenario parameters (2025 defaults)
+
+### Styles (`src/styles/`)
+
+**Centralized style system**:
+
+1. **`constants.ts`** - STYLES object (colors, components) + CHART_COLORS
+
+### Utils (`src/utils/`)
+
+**Helper functions**:
+
+1. **`formatters.ts`** - Dutch number formatting
+2. **`chartHelpers.ts`** - Chart data transformations
+
+## UI Components
+
+### Navigation System
+- **Main categories**: Zorgaanbod, Opleiding, Zorgvraag (sidebar)
+- **Sub categories**: Dynamically rendered based on selected main category
+- **Interactive legend** for zorgvraag/uitstroom charts
+
+### Chart Types
+1. **LineChart** - Historical trends (2010-2025) or projections (2025-2043)
+2. **BarChart** - Comparison of years 2019, 2022, 2025
 
 ### Color System
-- **Primary brand colors**: `#006583` (teal), `#0F2B5B` (navy), `#006470` (dark teal), `#D76628` (orange)
-- **Chart-specific palettes**: 
-  - `zorgvraag` and `uitstroom` categories have custom color mappings with varied stroke styles (solid, dashed patterns)
-  - Default categories use a standard 6-color palette
-- **Style preference**: Gray grid lines should NOT be visible in bar charts (per user rules)
+Brand colors from `STYLES.colors`: Primary (#006583), Navy (#0F2B5B), Teal (#006470), Orange (#D76628)
 
-### TypeScript/JavaScript Mix
-- Main dashboard component is TypeScript (`.tsx`)
-- Entry files are JavaScript (`.js`)
-- No strict type checking configured
+## Code Quality Improvements
+
+### Before Refactor
+- ScenarioModelAPI.tsx: **1467 lines**
+- Dashboard.tsx: **368 lines**
+- Inline styles everywhere, duplicated code
+
+### After Refactor
+- ScenarioModelAPI.tsx: **800 lines** (**-45%**)
+- Dashboard.tsx: **255 lines** (**-31%**)
+- **Total lines saved: ~780 lines**
 
 ## Data Updates
 
-To update dashboard data:
-1. Locate the `rawData` object in `Dashboard.tsx` (starts around line 10)
-2. Each category contains an array of metrics with `var`, `label`, and `data` fields
-3. Data arrays must have exactly 6 values (one per year: 2010, 2013, 2016, 2019, 2022, 2025)
-4. Update the `years` array if time periods change
+### Historical Data (Dashboard)
+Update file: `src/data/capacity-data.ts`
+- Locate `rawData` object
+- Update data arrays (must have exactly 6 values)
+
+### Baseline Configuration (Scenario Model)
+Update file: `src/data/baseline-config.ts`
+- All 2025 default values centralized here
 
 ## Chart Customization
 
 ### Line Chart Styling
-- Custom styles defined in `getLineStyle()` function
-- For `zorgvraag` and `uitstroom`: colors and stroke patterns are hardcoded by variable name
-- To modify: update the `styles` object in `getLineStyle()` for specific `varName` keys
-
-### Bar Chart Adjustments
-- Displays comparison for years 2019, 2022, 2025 only
-- Grid lines should be subtle or hidden (follow user preference for no visible gray grid lines)
-- Data transformation happens inline at render time
+Defined in `src/utils/chartHelpers.ts` → `getLineStyle()`
+- Edit `CHART_COLORS.zorgvraag` or `CHART_COLORS.uitstroom` in `styles/constants.ts`
 
 ## Testing
+- Framework: Jest with React Testing Library
+- Current coverage: Minimal (only default App.test.js)
 
-- Testing framework: Jest with React Testing Library
-- Test setup: `setupTests.js` configures `@testing-library/jest-dom`
-- Currently minimal test coverage (only default App.test.js)
+## Documentation
+
+Comprehensive docs available:
+
+1. **ARCHITECTURE.md**: System design, data flow, component hierarchy
+2. **CALCULATIONS.md**: All formulas, Stata methodology, validation rules
+3. **DATA-MAPPING.md**: CSV → TypeScript mapping, API contracts
+4. **WARP.md**: This file (quick reference)
+
+## Quick Reference
+
+### Import Examples
+
+```typescript
+// Old way (before refactor)
+const styles = { /* inline styles */ };
+
+// New way (after refactor)
+import { STYLES } from './styles/constants';
+import { rawData } from './data/capacity-data';
+import NumberInputWithSlider from './components/NumberInputWithSlider';
+```
+
+---
+
+**Last Updated**: October 2025 (Post-refactor)
+**Questions**: Check ARCHITECTURE.md, CALCULATIONS.md, DATA-MAPPING.md

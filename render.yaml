@@ -19,10 +19,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: REACT_APP_API_URL
-        fromService:
-          type: web
-          name: huisartsen-dashboard-backend
-          property: host
+        value: https://huisartsen-dashboard-backend.onrender.com
 
   # ========================================
   # BACKEND: Python Flask + R

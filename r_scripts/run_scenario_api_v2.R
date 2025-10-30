@@ -153,7 +153,9 @@ if (length(args) >= 32) {
 
 cat("Stap 1: Parameters laden en beschikbaar aanbod berekenen...\n")
 
-csv_file <- "/Users/mgmheck/Library/CloudStorage/OneDrive-Capaciteitsorgaan/040 - 049 HA/046 Data en analyse/2025-10-22_Parameterwaarden-2010-2013-2016-2019-2025_DEF.csv"
+# Gebruik environment variable DATA_PATH, fallback naar lokaal path voor development
+csv_file <- Sys.getenv("DATA_PATH", "/Users/mgmheck/Library/CloudStorage/OneDrive-Capaciteitsorgaan/040 - 049 HA/046 Data en analyse/2025-10-22_Parameterwaarden-2010-2013-2016-2019-2025_DEF.csv")
+cat(sprintf("📁 CSV bestand: %s\n", csv_file))
 
 params_raw <- read_delim(csv_file, delim = ";", show_col_types = FALSE)
 params_meta <- params_raw %>% filter(is.na(`actual-projection`) | `actual-projection` == "")

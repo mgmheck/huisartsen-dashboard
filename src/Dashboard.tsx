@@ -157,12 +157,12 @@ const Dashboard = () => {
       ],
       zorgvraag: [
         { var: 'epi_midden', label: 'Epidemiologie (%)', data: getDataArray('epi_midden').map(v => v * 100) },
-        { var: 'sociaal_midden', label: 'Sociaal-cultureel (%)', data: getDataArray('sociaal_midden').map(v => v * 100) },
-        { var: 'vakinh_midden', label: 'Vakinhoudelijk (%)', data: getDataArray('vakinh_midden').map(v => v * 100) },
-        { var: 'effic_midden', label: 'Efficiency (%)', data: getDataArray('effic_midden').map(v => v * 100) },
-        { var: 'horsub_midden', label: 'Horizontale substitutie (%)', data: getDataArray('horsub_midden').map(v => v * 100) },
-        { var: 'atv_midden', label: 'ATV (%)', data: getDataArray('atv_midden').map(v => v * 100) },
-        { var: 'vertsub_midden', label: 'Verticale substitutie (%)', data: getDataArray('vertsub_midden').map(v => v * 100) },
+        { var: 'soc_midden', label: 'Sociaal-cultureel (%)', data: getDataArray('soc_midden').map(v => v * 100) },
+        { var: 'vak_midden', label: 'Vakinhoudelijk (%)', data: getDataArray('vak_midden').map(v => v * 100) },
+        { var: 'eff_midden', label: 'Efficiency (%)', data: getDataArray('eff_midden').map(v => v * 100) },
+        { var: 'hor_midden', label: 'Horizontale substitutie (%)', data: getDataArray('hor_midden').map(v => v * 100) },
+        { var: 'tijd_midden', label: 'ATV (%)', data: getDataArray('tijd_midden').map(v => v * 100) },
+        { var: 'ver_midden', label: 'Verticale substitutie (%)', data: getDataArray('ver_midden').map(v => v * 100) },
         { var: 'totale_zorgvraag_excl_ATV_midden', label: 'Totale zorgvraag excl ATV (%)', data: getDataArray('totale_zorgvraag_excl_ATV_midden').map(v => v * 100) }
       ],
       demografie: [
@@ -245,12 +245,12 @@ const Dashboard = () => {
     if (selectedSubCategory === 'zorgvraag') {
       const styles = {
         'epi_midden': { stroke: '#0F2B5B', strokeWidth: 2, strokeDasharray: 'none' },
-        'sociaal_midden': { stroke: '#006470', strokeWidth: 2, strokeDasharray: '5 5' },
-        'vakinh_midden': { stroke: '#D76628', strokeWidth: 2, strokeDasharray: '3 3' },
-        'effic_midden': { stroke: '#1a4d7a', strokeWidth: 2, strokeDasharray: '8 2' },
-        'horsub_midden': { stroke: '#008594', strokeWidth: 2, strokeDasharray: 'none' },
-        'atv_midden': { stroke: '#e67e3a', strokeWidth: 3, strokeDasharray: '10 5' },
-        'vertsub_midden': { stroke: '#052040', strokeWidth: 2, strokeDasharray: '2 2' },
+        'soc_midden': { stroke: '#006470', strokeWidth: 2, strokeDasharray: '5 5' },
+        'vak_midden': { stroke: '#D76628', strokeWidth: 2, strokeDasharray: '3 3' },
+        'eff_midden': { stroke: '#1a4d7a', strokeWidth: 2, strokeDasharray: '8 2' },
+        'hor_midden': { stroke: '#008594', strokeWidth: 2, strokeDasharray: 'none' },
+        'tijd_midden': { stroke: '#e67e3a', strokeWidth: 3, strokeDasharray: '10 5' },
+        'ver_midden': { stroke: '#052040', strokeWidth: 2, strokeDasharray: '2 2' },
         'totale_zorgvraag_excl_ATV_midden': { stroke: '#000000', strokeWidth: 4, strokeDasharray: 'none' }
       };
       return styles[varName] || { stroke: '#0F2B5B', strokeWidth: 2, strokeDasharray: 'none' };

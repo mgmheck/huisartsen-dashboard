@@ -74,7 +74,7 @@ render.yaml
 
 # Scripts not needed in Docker
 Scripts/
-r_scripts/
+# r_scripts/ is NEEDED in Docker (contains R model for API)
 
 # Large data files (only include what's in public/data)
 *.xlsx

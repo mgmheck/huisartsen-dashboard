@@ -40,9 +40,7 @@ RUN R -e "options(repos = c(CRAN = 'https://cloud.r-project.org/')); \
 # Copy application code (do this last for better caching)
 COPY api/ /app/api/
 COPY public/data/ /app/data/
-
-# Create R scripts directory
-RUN mkdir -p /app/r_scripts
+COPY r_scripts/ /app/r_scripts/
 
 # Set environment variables
 ENV PYTHONPATH=/app \

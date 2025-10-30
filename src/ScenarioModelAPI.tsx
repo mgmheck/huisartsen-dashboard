@@ -58,6 +58,9 @@ const formatDutchNumber = (value: number, decimals: number = 0): string => {
   return value.toFixed(decimals).replace('.', ',');
 };
 
+// API URL configuratie - gebruik environment variable of fallback naar localhost
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+
 const ScenarioModelAPI = () => {
   // Voorkeursscenario baseline waarden (2025 defaults)
   const BASELINE = {
@@ -139,7 +142,7 @@ const ScenarioModelAPI = () => {
 
   // Check API health
   useEffect(() => {
-    fetch('http://localhost:5001/health')
+    fetch(`${API_URL}/health`)
       .then(res => res.json())
       .then(data => {
         if (data.status === 'healthy') {
@@ -169,7 +172,7 @@ const ScenarioModelAPI = () => {
 
   const loadBaseline = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/baseline');
+      const response = await fetch(`${API_URL}/api/baseline`);
       const data = await response.json();
       setBaseline(data.projectie);
     } catch (err) {
@@ -226,7 +229,7 @@ const ScenarioModelAPI = () => {
       if (scenario.uitstroom_factor_vrouw !== null) requestBody.uitstroom_factor_vrouw = scenario.uitstroom_factor_vrouw;
       if (scenario.uitstroom_factor_man !== null) requestBody.uitstroom_factor_man = scenario.uitstroom_factor_man;
 
-      const response = await fetch('http://localhost:5001/api/scenario', {
+      const response = await fetch(`${API_URL}/api/scenario`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

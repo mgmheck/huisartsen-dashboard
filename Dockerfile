@@ -30,12 +30,11 @@ COPY api/requirements.txt /app/requirements.txt
 # Install Python packages in one go (includes gunicorn)
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Install ONLY essential R packages for scenario model
-# Use binary packages when available (faster)
+# Install tidyverse (includes dplyr, readr, and more)
+# Heavier but guaranteed to work with all R scripts
+# Cache breaker: timestamp 2025-10-30-15:10
 RUN R -e "options(repos = c(CRAN = 'https://cloud.r-project.org/')); \
-    install.packages(c('jsonlite', 'dplyr', 'readr'), \
-    dependencies = FALSE, \
-    Ncpus = 2)"
+    install.packages('tidyverse', Ncpus = 2)"
 
 # Copy application code (do this last for better caching)
 COPY api/ /app/api/

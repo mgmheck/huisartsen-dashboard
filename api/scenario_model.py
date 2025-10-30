@@ -188,7 +188,7 @@ def call_r_model(instroom: float, intern_rendement: float, fte_vrouw: float, fte
             cmd,
             capture_output=True,
             text=True,
-            timeout=30  # 30 seconden timeout
+            timeout=120  # 120 seconden timeout (R berekeningen kunnen lang duren)
         )
 
         if result.returncode != 0:

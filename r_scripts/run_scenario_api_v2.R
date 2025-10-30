@@ -335,8 +335,19 @@ if (API_MODE) {
 }
 
 # Bereken beschikbaar aanbod
-setwd("/Users/mgmheck/Library/CloudStorage/OneDrive-Capaciteitsorgaan/040 - 049 HA/047 Capaciteitsplan/Capaciteitsplan 2025-2030/Visuals/Scripts")
-source("beschikbaar_aanbod.R")
+# Source from same directory as this script (works in both dev and Docker)
+script_dir <- dirname(sys.frame(1)$ofile)
+if (is.null(script_dir) || script_dir == "") {
+  # Fallback: get directory of current script via commandArgs
+  script_path <- sub("--file=", "", grep("--file=", commandArgs(trailingOnly = FALSE), value = TRUE))
+  if (length(script_path) > 0) {
+    script_dir <- dirname(script_path)
+  } else {
+    script_dir <- getwd()
+  }
+}
+cat(sprintf("📂 Script directory: %s\n", script_dir))
+source(file.path(script_dir, "beschikbaar_aanbod.R"))
 
 jaren <- 21
 data <- tibble(!!!params_list) %>%

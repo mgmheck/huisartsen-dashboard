@@ -34,6 +34,9 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 # No need to install tidyverse - it's pre-installed in rocker/tidyverse image!
 # This eliminates 25-30 minutes of build time and bypasses Render's cache issues
 
+# Install additional R packages needed by our scripts
+RUN R -e "install.packages('zoo', repos='https://cloud.r-project.org/')"
+
 # Copy application code (do this last for better caching)
 COPY api/ /app/api/
 COPY public/data/ /app/data/

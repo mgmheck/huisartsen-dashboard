@@ -335,18 +335,17 @@ if (API_MODE) {
 }
 
 # Bereken beschikbaar aanbod
-# Source from same directory as this script (works in both dev and Docker)
-script_dir <- dirname(sys.frame(1)$ofile)
-if (is.null(script_dir) || script_dir == "") {
-  # Fallback: get directory of current script via commandArgs
-  script_path <- sub("--file=", "", grep("--file=", commandArgs(trailingOnly = FALSE), value = TRUE))
-  if (length(script_path) > 0) {
-    script_dir <- dirname(script_path)
-  } else {
-    script_dir <- getwd()
-  }
+# Get directory of current script (works in Rscript context)
+script_path <- commandArgs(trailingOnly = FALSE)
+script_path <- sub("--file=", "", grep("--file=", script_path, value = TRUE))
+if (length(script_path) > 0) {
+  script_dir <- dirname(script_path)
+} else {
+  # Fallback: assume we're in the r_scripts directory
+  script_dir <- "."
 }
 cat(sprintf("📂 Script directory: %s\n", script_dir))
+cat(sprintf("📂 Working directory: %s\n", getwd()))
 source(file.path(script_dir, "beschikbaar_aanbod.R"))
 
 jaren <- 21

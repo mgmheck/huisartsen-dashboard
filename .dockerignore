@@ -1,50 +1,92 @@
 # Docker ignore file - exclude deze bestanden van Docker image
+# Optimized voor snellere builds en kleinere images
 
-# Node modules
+# Node modules (LARGE - must exclude)
 node_modules/
 npm-debug.log
+package-lock.json
 
-# Build folders
+# Build folders (not needed in Docker)
 build/
 dist/
 
-# Git
+# Git (large directory)
 .git/
 .gitignore
+.github/
 
-# IDE
+# IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-*
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Environment files
 .env
-.env.local
+.env.*
+!.env.example
 
-# Python
+# Python (exclude caches and virtual envs)
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
 venv/
+env/
 ENV/
+*.pyc
+*.pyo
+*.pyd
 
-# Test files
+# Test files (not needed in production)
 *.test.js
+*.test.ts
 *.spec.js
+*.spec.ts
+test/
+tests/
+__tests__/
+*.test.tsx
 
-# Documentation
+# Documentation (large files)
 *.md
 !README.md
+docs/
+*.pdf
+*.docx
 
 # Vercel
 .vercel/
 
+# Render
+.render/
+render.yaml
+
 # Claude
 .claude/
+
+# Scripts not needed in Docker
+Scripts/
+r_scripts/
+
+# Large data files (only include what's in public/data)
+*.xlsx
+*.xls
+*.csv
+!public/data/*.csv
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

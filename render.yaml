@@ -31,7 +31,7 @@ services:
     name: huisartsen-dashboard-backend
     env: docker
     dockerfilePath: ./Dockerfile
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     envVars:
       - key: FLASK_ENV
         value: production

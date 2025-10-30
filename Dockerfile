@@ -2,7 +2,7 @@
 # Python Flask + R Support - Build time optimized
 
 # Use smaller R base image with pre-compiled packages
-FROM rocker/r-ver:4.3.2-ubuntu22.04
+FROM rocker/r-ver:4.3
 
 # Set environment variables for faster builds
 ENV DEBIAN_FRONTEND=noninteractive \

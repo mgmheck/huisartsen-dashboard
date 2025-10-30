@@ -30,10 +30,10 @@ COPY api/requirements.txt /app/requirements.txt
 # Install Python packages in one go (includes gunicorn)
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Install ONLY essential R packages (reduced from 4 to 2)
+# Install ONLY essential R packages for scenario model
 # Use binary packages when available (faster)
 RUN R -e "options(repos = c(CRAN = 'https://cloud.r-project.org/')); \
-    install.packages(c('jsonlite', 'dplyr'), \
+    install.packages(c('jsonlite', 'dplyr', 'readr'), \
     dependencies = FALSE, \
     Ncpus = 2)"
 

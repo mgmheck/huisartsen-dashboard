@@ -7,7 +7,9 @@
 #===============================================================================
 
 suppressPackageStartupMessages({
-  library(tidyverse)
+  library(dplyr)
+  library(readr)
+  library(jsonlite)
 })
 
 #===============================================================================

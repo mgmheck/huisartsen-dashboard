@@ -1,8 +1,9 @@
 # Optimized Dockerfile voor Huisartsen Dashboard Backend
 # Python Flask + R Support - Build time optimized
 
-# Use smaller R base image with pre-compiled packages
-FROM rocker/r-ver:4.3
+# Use rocker/tidyverse image with pre-installed tidyverse packages
+# This bypasses Render's aggressive caching of R package installations
+FROM rocker/tidyverse:4.3
 
 # Set environment variables for faster builds
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -30,11 +31,8 @@ COPY api/requirements.txt /app/requirements.txt
 # Install Python packages in one go (includes gunicorn)
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Install tidyverse (includes dplyr, readr, and more)
-# Heavier but guaranteed to work with all R scripts
-# Cache breaker: timestamp 2025-10-30-15:10
-RUN R -e "options(repos = c(CRAN = 'https://cloud.r-project.org/')); \
-    install.packages('tidyverse', Ncpus = 2)"
+# No need to install tidyverse - it's pre-installed in rocker/tidyverse image!
+# This eliminates 25-30 minutes of build time and bypasses Render's cache issues
 
 # Copy application code (do this last for better caching)
 COPY api/ /app/api/

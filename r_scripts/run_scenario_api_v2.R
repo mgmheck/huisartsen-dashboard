@@ -16,7 +16,7 @@ suppressPackageStartupMessages({
 
 args <- commandArgs(trailingOnly = TRUE)
 
-if (length(args) >= 32) {
+if (length(args) >= 33) {
   # API mode: custom parameters
   instroom_override <- as.numeric(args[1])
   fte_vrouw_override <- as.numeric(args[2])
@@ -92,7 +92,17 @@ if (length(args) >= 32) {
     uitstroom_factor_man <- as.numeric(uitstroom_factor_man)
   }
 
-  output_file <- args[32]
+  # Nieuwe parameter: opleidingsduur override
+  opleidingsduur_override <- args[32]
+
+  # Check of opleidingsduur moet worden overschreven
+  OVERRIDE_OPLEIDINGSDUUR <- !(opleidingsduur_override == "NA")
+
+  if (OVERRIDE_OPLEIDINGSDUUR) {
+    opleidingsduur_override <- as.numeric(opleidingsduur_override)
+  }
+
+  output_file <- args[33]
   API_MODE <- TRUE
 
   cat("=================================================================\n")
@@ -329,6 +339,16 @@ if (API_MODE) {
     params_list$extern_rendement_man_15jaar3 <- extern_rendement_man_15jaar_override
   } else {
     cat("  → Extern rendement: GEBRUIK CSV DEFAULTS (tijd-afhankelijk)\n")
+  }
+
+  # Opleidingsduur override - ALLE drie cohorten
+  if (OVERRIDE_OPLEIDINGSDUUR) {
+    cat(sprintf("  → Opleidingsduur OVERRIDE actief: %.1f jaar\n", opleidingsduur_override))
+    params_list$opleidingsduur <- opleidingsduur_override
+    params_list$opleidingsduur2 <- opleidingsduur_override
+    params_list$opleidingsduur3 <- opleidingsduur_override
+  } else {
+    cat("  → Opleidingsduur: GEBRUIK CSV DEFAULT (3 jaar)\n")
   }
 
   cat("✓ Parameters overschreven\n\n")

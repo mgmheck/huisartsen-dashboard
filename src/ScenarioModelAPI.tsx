@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 interface ScenarioParameters {
   instroom: number;
   intern_rendement: number;
+  opleidingsduur: number;
   fte_vrouw: number;
   fte_man: number;
   // Extern rendement - 8 individuele parameters (4 vrouwen, 4 mannen)
@@ -66,6 +67,7 @@ const ScenarioModelAPI = () => {
   const BASELINE = {
     instroom: 718,
     intern_rendement: 0.94,
+    opleidingsduur: 3.0,
     fte_vrouw: 0.72,
     fte_man: 0.81,
     extern_rendement_vrouw_1jaar: 0.989,
@@ -97,6 +99,7 @@ const ScenarioModelAPI = () => {
   const [scenario, setScenario] = useState<ScenarioParameters>({
     instroom: 718,
     intern_rendement: 0.94,
+    opleidingsduur: 3.0,
     fte_vrouw: 0.72,
     fte_man: 0.81,
     // Extern rendement - CSV default waarden uit Capaciteitsplan 2025
@@ -190,6 +193,7 @@ const ScenarioModelAPI = () => {
       const requestBody: any = {
         instroom: scenario.instroom,
         intern_rendement: scenario.intern_rendement,
+        opleidingsduur: scenario.opleidingsduur,
         fte_vrouw: scenario.fte_vrouw,
         fte_man: scenario.fte_man,
       };
@@ -664,6 +668,7 @@ const ScenarioModelAPI = () => {
                   <button
                     onClick={() => setScenario({...scenario,
                       intern_rendement: BASELINE.intern_rendement,
+                      opleidingsduur: BASELINE.opleidingsduur,
                       extern_rendement_vrouw_1jaar: BASELINE.extern_rendement_vrouw_1jaar,
                       extern_rendement_vrouw_5jaar: BASELINE.extern_rendement_vrouw_5jaar,
                       extern_rendement_vrouw_10jaar: BASELINE.extern_rendement_vrouw_10jaar,
@@ -719,6 +724,39 @@ const ScenarioModelAPI = () => {
                   />
                   <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
                     Vastgestelde waarde: {formatDutchNumber(BASELINE.intern_rendement * 100, 0)}%
+                  </div>
+                </div>
+
+                {/* Opleidingsduur */}
+                <div style={{ marginBottom: '0.5rem' }}>
+                  <label style={{ fontSize: '0.875rem', fontWeight: '500', color: '#333', display: 'block', marginBottom: '0.5rem' }}>
+                    Opleidingsduur (jaren)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="2.0"
+                    max="4.0"
+                    value={scenario.opleidingsduur}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (!isNaN(value)) {
+                        setScenario({...scenario, opleidingsduur: value});
+                      }
+                    }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                  />
+                  <input
+                    type="range"
+                    min="2.0"
+                    max="4.0"
+                    step="0.1"
+                    value={scenario.opleidingsduur}
+                    onChange={(e) => setScenario({...scenario, opleidingsduur: parseFloat(e.target.value)})}
+                    style={{ width: '100%', display: 'block' }}
+                  />
+                  <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
+                    Vastgestelde waarde: {formatDutchNumber(BASELINE.opleidingsduur, 1)} jaar
                   </div>
                 </div>
 
@@ -1175,6 +1213,8 @@ const ScenarioModelAPI = () => {
             <button
                 onClick={() => setScenario({
                   instroom: 718,
+                  intern_rendement: 0.94,
+                  opleidingsduur: 3.0,
                   fte_vrouw: 0.72,
                   fte_man: 0.81,
                   // Reset extern rendement naar CSV defaults (8 waarden)
@@ -1422,6 +1462,8 @@ const ScenarioModelAPI = () => {
               <button
                 onClick={() => setScenario({
                   instroom: 718,
+                  intern_rendement: 0.94,
+                  opleidingsduur: 3.0,
                   fte_vrouw: 0.72,
                   fte_man: 0.81,
                   extern_rendement_vrouw_1jaar: 0.989,

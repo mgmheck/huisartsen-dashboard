@@ -42,6 +42,7 @@ DEFAULT_PARAMS = {
     # AANBOD parameters
     'instroom': 718,  # n_inopleiding_perjaar3
     'intern_rendement': 0.94,
+    'opleidingsduur': 3.0,  # Opleidingsduur in jaren
     'fte_vrouw': 0.72,
     'fte_man': 0.81,
     # Extern rendement CSV defaults (Capaciteitsplan 2025)
@@ -93,7 +94,8 @@ def call_r_model(instroom: float, intern_rendement: float, fte_vrouw: float, fte
                  eff_midden: float = None, hor_midden: float = None, tijd_midden: float = None,
                  ver_midden: float = None, totale_zorgvraag_excl_ATV_midden: float = None,
                  demografie_factor: float = None,
-                 uitstroom_factor_vrouw: float = None, uitstroom_factor_man: float = None) -> pd.DataFrame:
+                 uitstroom_factor_vrouw: float = None, uitstroom_factor_man: float = None,
+                 opleidingsduur: float = None) -> pd.DataFrame:
     """
     Roep het R model aan met gegeven parameters.
 
@@ -180,6 +182,8 @@ def call_r_model(instroom: float, intern_rendement: float, fte_vrouw: float, fte
             "NA" if demografie_factor is None else str(demografie_factor),
             "NA" if uitstroom_factor_vrouw is None else str(uitstroom_factor_vrouw),
             "NA" if uitstroom_factor_man is None else str(uitstroom_factor_man),
+            # Opleidingsduur (1 parameter)
+            "NA" if opleidingsduur is None else str(opleidingsduur),
             # Output file
             output_file
         ]
@@ -353,9 +357,9 @@ def api_baseline():
         # Roep R model aan met default parameters (met 8 extern rendement en 8 uitstroom waarden)
         df = call_r_model(
             instroom=DEFAULT_PARAMS['instroom'],
+            intern_rendement=DEFAULT_PARAMS['intern_rendement'],
             fte_vrouw=DEFAULT_PARAMS['fte_vrouw'],
             fte_man=DEFAULT_PARAMS['fte_man'],
-            intern_rendement=DEFAULT_PARAMS['intern_rendement'],
             # Extern rendement - 8 individuele parameters
             extern_rendement_vrouw_1jaar=DEFAULT_PARAMS['extern_rendement_vrouw_1jaar'],
             extern_rendement_vrouw_5jaar=DEFAULT_PARAMS['extern_rendement_vrouw_5jaar'],
@@ -373,7 +377,9 @@ def api_baseline():
             uitstroom_vrouw_15j=DEFAULT_PARAMS['uitstroom_vrouw_15j'],
             uitstroom_man_15j=DEFAULT_PARAMS['uitstroom_man_15j'],
             uitstroom_vrouw_20j=DEFAULT_PARAMS['uitstroom_vrouw_20j'],
-            uitstroom_man_20j=DEFAULT_PARAMS['uitstroom_man_20j']
+            uitstroom_man_20j=DEFAULT_PARAMS['uitstroom_man_20j'],
+            # Opleidingsduur
+            opleidingsduur=DEFAULT_PARAMS['opleidingsduur']
         )
 
         # Converteer naar JSON (scenario 6)
@@ -434,6 +440,7 @@ def api_scenario():
         # Parse parameters (met defaults)
         instroom = data.get('instroom', DEFAULT_PARAMS['instroom'])
         intern_rendement = data.get('intern_rendement', DEFAULT_PARAMS['intern_rendement'])
+        opleidingsduur = data.get('opleidingsduur', DEFAULT_PARAMS['opleidingsduur'])
         fte_vrouw = data.get('fte_vrouw', DEFAULT_PARAMS['fte_vrouw'])
         fte_man = data.get('fte_man', DEFAULT_PARAMS['fte_man'])
 
@@ -480,6 +487,9 @@ def api_scenario():
 
         if not (0.7 <= intern_rendement <= 1.0):
             return jsonify({'error': 'Intern rendement moet tussen 0.7 en 1.0 zijn'}), 400
+
+        if not (2.0 <= opleidingsduur <= 4.0):
+            return jsonify({'error': 'Opleidingsduur moet tussen 2.0 en 4.0 jaar zijn'}), 400
 
         if not (0.5 <= fte_vrouw <= 1.0):
             return jsonify({'error': 'FTE vrouw moet tussen 0.5 en 1.0 zijn'}), 400
@@ -581,7 +591,9 @@ def api_scenario():
             # Demografie en uitstroom factors
             demografie_factor=demografie_factor,
             uitstroom_factor_vrouw=uitstroom_factor_vrouw,
-            uitstroom_factor_man=uitstroom_factor_man
+            uitstroom_factor_man=uitstroom_factor_man,
+            # Opleidingsduur
+            opleidingsduur=opleidingsduur
         )
 
         # Converteer naar JSON

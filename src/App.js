@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Dashboard from './Dashboard.tsx';
 import ScenarioModelAPI from './ScenarioModelAPI.tsx';
-import ScenarioModelAPIOptimized from './src-optimized/ScenarioModelAPIOptimized.tsx';
+import ScenarioModelAPIOptimized from './optimized/ScenarioModelAPIOptimized.tsx';
 
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');

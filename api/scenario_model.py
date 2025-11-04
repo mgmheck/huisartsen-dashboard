@@ -14,6 +14,8 @@ Versie: 3.0 (R Wrapper - Optie D)
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import subprocess
 import pandas as pd
 from pathlib import Path
@@ -21,6 +23,7 @@ import tempfile
 import os
 import traceback
 import sys
+import hashlib
 
 # ==================================================================================
 # CONFIGURATIE
@@ -34,8 +37,19 @@ DATA_PATH = Path(os.getenv('DATA_PATH', "/Users/mgmheck/Library/CloudStorage/One
 app = Flask(__name__)
 CORS(app)
 
+# Rate limiting configuratie
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
+
 # Port configuratie
 PORT = int(os.getenv('PORT', 5001))
+
+# Debug mode detection (voor error sanitization)
+DEBUG = os.getenv('FLASK_ENV', 'production') == 'development'
 
 # Default parameters (from CSV)
 DEFAULT_PARAMS = {
@@ -75,8 +89,89 @@ DEFAULT_PARAMS = {
 }
 
 # ==================================================================================
+# VALIDATION CONFIG
+# ==================================================================================
+
+VALIDATION_RULES = {
+    # Aanbod parameters
+    'instroom': (600, 1500, 'Instroom moet tussen 600 en 1500 zijn'),
+    'intern_rendement': (0.7, 1.0, 'Intern rendement moet tussen 0.7 en 1.0 zijn'),
+    'opleidingsduur': (2.0, 4.0, 'Opleidingsduur moet tussen 2.0 en 4.0 jaar zijn'),
+    'fte_vrouw': (0.5, 1.0, 'FTE vrouw moet tussen 0.5 en 1.0 zijn'),
+    'fte_man': (0.5, 1.0, 'FTE man moet tussen 0.5 en 1.0 zijn'),
+
+    # Extern rendement (8 waarden)
+    'extern_rendement_vrouw_1jaar': (0.0, 1.0, 'extern_rendement_vrouw_1jaar moet tussen 0.0 en 1.0 zijn'),
+    'extern_rendement_vrouw_5jaar': (0.0, 1.0, 'extern_rendement_vrouw_5jaar moet tussen 0.0 en 1.0 zijn'),
+    'extern_rendement_vrouw_10jaar': (0.0, 1.0, 'extern_rendement_vrouw_10jaar moet tussen 0.0 en 1.0 zijn'),
+    'extern_rendement_vrouw_15jaar': (0.0, 1.0, 'extern_rendement_vrouw_15jaar moet tussen 0.0 en 1.0 zijn'),
+    'extern_rendement_man_1jaar': (0.0, 1.0, 'extern_rendement_man_1jaar moet tussen 0.0 en 1.0 zijn'),
+    'extern_rendement_man_5jaar': (0.0, 1.0, 'extern_rendement_man_5jaar moet tussen 0.0 en 1.0 zijn'),
+    'extern_rendement_man_10jaar': (0.0, 1.0, 'extern_rendement_man_10jaar moet tussen 0.0 en 1.0 zijn'),
+    'extern_rendement_man_15jaar': (0.0, 1.0, 'extern_rendement_man_15jaar moet tussen 0.0 en 1.0 zijn'),
+
+    # Uitstroom (8 waarden)
+    'uitstroom_vrouw_5j': (0.0, 1.0, 'uitstroom_vrouw_5j moet tussen 0.0 en 1.0 zijn'),
+    'uitstroom_man_5j': (0.0, 1.0, 'uitstroom_man_5j moet tussen 0.0 en 1.0 zijn'),
+    'uitstroom_vrouw_10j': (0.0, 1.0, 'uitstroom_vrouw_10j moet tussen 0.0 en 1.0 zijn'),
+    'uitstroom_man_10j': (0.0, 1.0, 'uitstroom_man_10j moet tussen 0.0 en 1.0 zijn'),
+    'uitstroom_vrouw_15j': (0.0, 1.0, 'uitstroom_vrouw_15j moet tussen 0.0 en 1.0 zijn'),
+    'uitstroom_man_15j': (0.0, 1.0, 'uitstroom_man_15j moet tussen 0.0 en 1.0 zijn'),
+    'uitstroom_vrouw_20j': (0.0, 1.0, 'uitstroom_vrouw_20j moet tussen 0.0 en 1.0 zijn'),
+    'uitstroom_man_20j': (0.0, 1.0, 'uitstroom_man_20j moet tussen 0.0 en 1.0 zijn'),
+
+    # Vraagcomponenten
+    'epi_midden': (-0.05, 0.05, 'epi_midden moet tussen -0.05 en 0.05 zijn'),
+    'soc_midden': (-0.05, 0.05, 'soc_midden moet tussen -0.05 en 0.05 zijn'),
+    'vak_midden': (-0.05, 0.05, 'vak_midden moet tussen -0.05 en 0.05 zijn'),
+    'eff_midden': (-0.05, 0.05, 'eff_midden moet tussen -0.05 en 0.05 zijn'),
+    'hor_midden': (-0.05, 0.05, 'hor_midden moet tussen -0.05 en 0.05 zijn'),
+    'tijd_midden': (-0.05, 0.05, 'tijd_midden moet tussen -0.05 en 0.05 zijn'),
+    'ver_midden': (-0.05, 0.05, 'ver_midden moet tussen -0.05 en 0.05 zijn'),
+    'totale_zorgvraag_excl_ATV_midden': (-0.05, 0.05, 'totale_zorgvraag_excl_ATV_midden moet tussen -0.05 en 0.05 zijn'),
+
+    # Factors
+    'demografie_factor': (0.9, 1.3, 'Demografie factor moet tussen 0.9 en 1.3 zijn (-10% tot +30%)'),
+    'uitstroom_factor_vrouw': (0.0, 0.8, 'Uitstroom factor vrouw moet tussen 0.0 en 0.8 zijn (0% tot 80%)'),
+    'uitstroom_factor_man': (0.0, 0.8, 'Uitstroom factor man moet tussen 0.0 en 0.8 zijn (0% tot 80%)'),
+}
+
+def validate_parameters(data: dict) -> tuple[bool, str]:
+    """
+    Valideer parameters volgens VALIDATION_RULES config.
+
+    Returns:
+        (is_valid, error_message): Tuple met validatie result en error message (None als valid)
+    """
+    for param, (min_val, max_val, error_msg) in VALIDATION_RULES.items():
+        if param in data:
+            value = data[param]
+            # Skip None values (optionele parameters)
+            if value is None:
+                continue
+            # Validate range
+            if not (min_val <= value <= max_val):
+                return False, error_msg
+
+    return True, None
+
+# ==================================================================================
 # HELPER FUNCTIES
 # ==================================================================================
+
+def get_csv_hash() -> str:
+    """
+    Bereken MD5 hash van CSV data file voor cache invalidatie.
+
+    Returns:
+        str: MD5 hash van CSV bestand
+    """
+    try:
+        with open(DATA_PATH, 'rb') as f:
+            return hashlib.md5(f.read()).hexdigest()
+    except Exception as e:
+        print(f"Warning: Could not calculate CSV hash: {e}", file=sys.stderr)
+        return "unknown"
 
 def call_r_model(instroom: float, intern_rendement: float, fte_vrouw: float, fte_man: float,
                  # Extern rendement - 8 individuele waarden (verplicht)
@@ -332,16 +427,22 @@ def dataframe_to_projectie_json(df: pd.DataFrame, scenario: str = 'scenario6') -
 
 @app.route('/health', methods=['GET'])
 def health():
-    """Health check endpoint."""
+    """Health check endpoint met data versioning."""
     r_script_exists = R_SCRIPT_PATH.exists()
     data_exists = DATA_PATH.exists()
 
+    # Data versioning voor frontend cache invalidatie
+    data_hash = get_csv_hash() if data_exists else None
+    data_modified = os.path.getmtime(DATA_PATH) if data_exists else None
+
     return jsonify({
         'status': 'healthy' if (r_script_exists and data_exists) else 'degraded',
-        'versie': '3.0 (R Wrapper)',
+        'versie': '3.0',
         'r_script_found': r_script_exists,
         'data_found': data_exists,
         'r_script_path': str(R_SCRIPT_PATH),
+        'data_hash': data_hash,  # Voor cache invalidatie
+        'data_modified': data_modified,  # Unix timestamp
     })
 
 
@@ -398,10 +499,15 @@ def api_baseline():
         traceback.print_exc(file=sys.stderr)
         print("="*80 + "\n", file=sys.stderr)
 
-        return jsonify({'error': str(e)}), 500
+        # Error sanitization - alleen details in DEBUG mode
+        if DEBUG:
+            return jsonify({'error': str(e)}), 500  # Development: details
+        else:
+            return jsonify({'error': 'Internal server error'}), 500  # Production: generiek
 
 
 @app.route('/api/scenario', methods=['POST'])
+@limiter.limit("10 per minute")  # Rate limiting voor zware berekeningen
 def api_scenario():
     """
     Bereken custom scenario met user-defined parameters.
@@ -481,79 +587,10 @@ def api_scenario():
         uitstroom_factor_vrouw = data.get('uitstroom_factor_vrouw', None)
         uitstroom_factor_man = data.get('uitstroom_factor_man', None)
 
-        # Validatie
-        if not (600 <= instroom <= 1500):
-            return jsonify({'error': 'Instroom moet tussen 600 en 1500 zijn'}), 400
-
-        if not (0.7 <= intern_rendement <= 1.0):
-            return jsonify({'error': 'Intern rendement moet tussen 0.7 en 1.0 zijn'}), 400
-
-        if not (2.0 <= opleidingsduur <= 4.0):
-            return jsonify({'error': 'Opleidingsduur moet tussen 2.0 en 4.0 jaar zijn'}), 400
-
-        if not (0.5 <= fte_vrouw <= 1.0):
-            return jsonify({'error': 'FTE vrouw moet tussen 0.5 en 1.0 zijn'}), 400
-
-        if not (0.5 <= fte_man <= 1.0):
-            return jsonify({'error': 'FTE man moet tussen 0.5 en 1.0 zijn'}), 400
-
-        # Valideer extern rendement (8 waarden, allemaal tussen 0.0 en 1.0)
-        extern_rend_params = {
-            'extern_rendement_vrouw_1jaar': extern_rendement_vrouw_1jaar,
-            'extern_rendement_vrouw_5jaar': extern_rendement_vrouw_5jaar,
-            'extern_rendement_vrouw_10jaar': extern_rendement_vrouw_10jaar,
-            'extern_rendement_vrouw_15jaar': extern_rendement_vrouw_15jaar,
-            'extern_rendement_man_1jaar': extern_rendement_man_1jaar,
-            'extern_rendement_man_5jaar': extern_rendement_man_5jaar,
-            'extern_rendement_man_10jaar': extern_rendement_man_10jaar,
-            'extern_rendement_man_15jaar': extern_rendement_man_15jaar
-        }
-        for param_name, param_val in extern_rend_params.items():
-            if not (0.0 <= param_val <= 1.0):
-                return jsonify({'error': f'{param_name} moet tussen 0.0 en 1.0 zijn'}), 400
-
-        # Valideer uitstroom (8 waarden, allemaal tussen 0.0 en 1.0)
-        uitstroom_params = {
-            'uitstroom_vrouw_5j': uitstroom_vrouw_5j,
-            'uitstroom_man_5j': uitstroom_man_5j,
-            'uitstroom_vrouw_10j': uitstroom_vrouw_10j,
-            'uitstroom_man_10j': uitstroom_man_10j,
-            'uitstroom_vrouw_15j': uitstroom_vrouw_15j,
-            'uitstroom_man_15j': uitstroom_man_15j,
-            'uitstroom_vrouw_20j': uitstroom_vrouw_20j,
-            'uitstroom_man_20j': uitstroom_man_20j
-        }
-        for param_name, param_val in uitstroom_params.items():
-            if not (0.0 <= param_val <= 1.0):
-                return jsonify({'error': f'{param_name} moet tussen 0.0 en 1.0 zijn'}), 400
-
-        # Valideer vraagcomponenten (range -0.05 tot +0.05)
-        vraagcomp_params = {
-            'epi_midden': epi_midden,
-            'soc_midden': soc_midden,
-            'vak_midden': vak_midden,
-            'eff_midden': eff_midden,
-            'hor_midden': hor_midden,
-            'tijd_midden': tijd_midden,
-            'ver_midden': ver_midden,
-            'totale_zorgvraag_excl_ATV_midden': totale_zorgvraag_excl_ATV_midden
-        }
-
-        for param_name, param_value in vraagcomp_params.items():
-            if param_value is not None and not (-0.05 <= param_value <= 0.05):
-                return jsonify({'error': f'{param_name} moet tussen -0.05 en 0.05 zijn'}), 400
-
-        # Valideer factors (aangepaste ranges)
-        # Demografie: -10% tot +30% = 0.9 tot 1.3
-        if demografie_factor is not None and not (0.9 <= demografie_factor <= 1.3):
-            return jsonify({'error': 'Demografie factor moet tussen 0.9 en 1.3 zijn (-10% tot +30%)'}), 400
-
-        # Uitstroom: 0% tot 80% = 0.0 tot 0.8
-        if uitstroom_factor_vrouw is not None and not (0.0 <= uitstroom_factor_vrouw <= 0.8):
-            return jsonify({'error': 'Uitstroom factor vrouw moet tussen 0.0 en 0.8 zijn (0% tot 80%)'}), 400
-
-        if uitstroom_factor_man is not None and not (0.0 <= uitstroom_factor_man <= 0.8):
-            return jsonify({'error': 'Uitstroom factor man moet tussen 0.0 en 0.8 zijn (0% tot 80%)'}), 400
+        # Validatie met helper function
+        is_valid, error_message = validate_parameters(data)
+        if not is_valid:
+            return jsonify({'error': error_message}), 400
 
         # Roep R model aan
         df = call_r_model(
@@ -647,7 +684,11 @@ def api_scenario():
         traceback.print_exc(file=sys.stderr)
         print("="*80 + "\n", file=sys.stderr)
 
-        return jsonify({'error': str(e)}), 500
+        # Error sanitization - alleen details in DEBUG mode
+        if DEBUG:
+            return jsonify({'error': str(e)}), 500  # Development: details
+        else:
+            return jsonify({'error': 'Internal server error'}), 500  # Production: generiek
 
 
 @app.route('/api/test', methods=['GET'])

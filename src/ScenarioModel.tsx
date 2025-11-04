@@ -57,7 +57,7 @@ const ScenarioModel = () => {
             setCsvData(results.data as CSVRow[]);
             setLoading(false);
           },
-          error: (err) => {
+          error: (err: any) => {
             setError(`CSV parsing error: ${err.message}`);
             setLoading(false);
           }
@@ -410,7 +410,7 @@ const ScenarioModel = () => {
               <div style={{ backgroundColor: evenwichtsjaar2043 && evenwichtsjaar2043.gap > 0 ? '#ffe5e5' : '#e5f5e5', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '1.25rem' }}>
                 <div style={{ fontSize: '0.875rem', color: '#006583', marginBottom: '0.25rem' }}>Gap 2043</div>
                 <div style={{ fontSize: '1.875rem', fontWeight: 'bold', color: evenwichtsjaar2043 && evenwichtsjaar2043.gap > 0 ? '#D76628' : '#006470', marginBottom: '0.25rem' }}>
-                  {evenwichtsjaar2043?.gap > 0 ? '+' : ''}{evenwichtsjaar2043?.gap.toLocaleString('nl-NL')} FTE
+                  {(evenwichtsjaar2043?.gap ?? 0) > 0 ? '+' : ''}{(evenwichtsjaar2043?.gap ?? 0).toLocaleString('nl-NL')} FTE
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#999' }}>
                   {evenwichtsjaar2043?.gapPercentage}% van aanbod

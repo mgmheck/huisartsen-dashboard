@@ -1,0 +1,75 @@
+/*
+ * Design Tokens - Huisartsen Dashboard
+ * Capaciteitsorgaan Kleurenpalet + Spacing System
+ */
+
+:root {
+  /* ====== KLEUREN ====== */
+  /* Capaciteitsorgaan Brand Colors */
+  --color-primary: #0F2B5B;          /* Donkerblauw */
+  --color-secondary: #006470;         /* PMS 315 */
+  --color-accent: #D76628;            /* PMS 717 */
+
+  /* Text Colors */
+  --color-text: #333;
+  --color-text-light: #666;
+  --color-text-lighter: #999;
+
+  /* UI Colors */
+  --color-border: #ddd;
+  --color-bg: #f8f8f8;
+  --color-bg-light: #fff;
+  --color-bg-dark: #f0f0f0;
+
+  /* State Colors */
+  --color-success: #28a745;
+  --color-warning: #ffc107;
+  --color-error: #dc3545;
+  --color-info: #17a2b8;
+
+  /* ====== SPACING ====== */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-xxl: 3rem;     /* 48px */
+
+  /* ====== TYPOGRAPHY ====== */
+  --font-size-xs: 0.75rem;   /* 12px */
+  --font-size-sm: 0.875rem;  /* 14px - BASE voor alle tekst */
+  --font-size-md: 1rem;      /* 16px */
+  --font-size-lg: 1.25rem;   /* 20px */
+  --font-size-xl: 1.5rem;    /* 24px */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* ====== BORDERS ====== */
+  --border-radius-sm: 0.25rem;  /* 4px */
+  --border-radius-md: 0.5rem;   /* 8px */
+  --border-radius-lg: 0.75rem;  /* 12px */
+
+  --border-width: 1px;
+  --border: var(--border-width) solid var(--color-border);
+
+  /* ====== SHADOWS ====== */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 2px 6px rgba(0,0,0,0.1);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.1);
+
+  /* ====== Z-INDEX ====== */
+  --z-index-base: 1;
+  --z-index-dropdown: 100;
+  --z-index-modal: 200;
+  --z-index-tooltip: 300;
+}
+
+/* Export voor gebruik in JavaScript */
+:export {
+  primary: var(--color-primary);
+  secondary: var(--color-secondary);
+  accent: var(--color-accent);
+}

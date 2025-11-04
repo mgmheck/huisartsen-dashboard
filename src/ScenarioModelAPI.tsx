@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, BarChart, Bar, Cell } from 'recharts';
+import React, { useState, useEffect, useMemo } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ScenarioParameters {
   instroom: number;
@@ -138,10 +138,11 @@ const ScenarioModelAPI = () => {
   const [projectie, setProjectie] = useState<ProjectieData[]>([]);
   const [baseline, setBaseline] = useState<ProjectieData[]>([]);
   const [instroomadvies, setInstroomadvies] = useState<number | null>(null);
-  const [impactAnalysis, setImpactAnalysis] = useState<any>(null);
+  const [_impactAnalysis, setImpactAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiConnected, setApiConnected] = useState(false);
+  const [isDebouncing, setIsDebouncing] = useState(false);
 
   // Check API health
   useEffect(() => {
@@ -165,11 +166,16 @@ const ScenarioModelAPI = () => {
   // Load scenario when parameters change
   useEffect(() => {
     if (apiConnected) {
+      setIsDebouncing(true);
       const debounce = setTimeout(() => {
+        setIsDebouncing(false);
         loadScenario();
-      }, 500);  // Debounce 500ms
+      }, 250);  // Debounce 250ms - optimized for faster response
 
-      return () => clearTimeout(debounce);
+      return () => {
+        clearTimeout(debounce);
+        setIsDebouncing(false);
+      };
     }
   }, [scenario, apiConnected]);
 
@@ -264,15 +270,15 @@ const ScenarioModelAPI = () => {
     }
   };
 
-  // Merge projectie en baseline voor chart
-  const combinedData = projectie.map((item, idx) => ({
+  // Merge projectie en baseline voor chart - MEMOIZED for performance
+  const combinedData = useMemo(() => projectie.map((item, idx) => ({
     jaar: item.jaar,
     aanbod_fte: item.aanbod_fte,
     benodigd_fte: item.benodigd_fte,
     gap_fte: item.gap_fte,
     aanbod_baseline: baseline?.[idx]?.aanbod_fte || null,
     benodigd_baseline: baseline?.[idx]?.benodigd_fte || null,
-  }));
+  })), [projectie, baseline]);
 
   const evenwichtsjaar2043 = projectie.find(d => d.jaar === 2043);
   const baseline2043 = baseline?.find(d => d.jaar === 2043);
@@ -306,12 +312,31 @@ const ScenarioModelAPI = () => {
 
         {/* Header */}
         <div style={{ marginBottom: '1rem' }}>
-          <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem 1.5rem' }}>
+          <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#006583', marginBottom: '0' }}>
               Interactief Scenario Model Kamer Huisartsen 2025
             </h1>
+            {(isDebouncing || loading) && (
+              <div style={{ fontSize: '0.875rem', color: '#006470', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{
+                  width: '1rem',
+                  height: '1rem',
+                  border: '2px solid #006470',
+                  borderTopColor: 'transparent',
+                  borderRadius: '50%',
+                  animation: 'spin 0.6s linear infinite'
+                }} />
+                <span>{isDebouncing ? 'Berekening voorbereiden...' : 'Berekenen...'}</span>
+              </div>
+            )}
           </div>
         </div>
+
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
 
         <div style={{ display: 'flex', gap: '1.5rem' }}>
 
@@ -436,7 +461,7 @@ const ScenarioModelAPI = () => {
                   </div>
                 </div>
 
-                {/* Uitstroom parameters naast elkaar */}
+                {/* Uitstroom parameters naast elkaar - 5 jaar */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                   {/* Uitstroom vrouw 5j */}
                   <div style={{ width: 'calc(50% - 0.25rem)' }}>
@@ -1228,6 +1253,12 @@ const ScenarioModelAPI = () => {
                   extern_rendement_man_15jaar: 0.905,
                   uitstroom_vrouw_5j: 0.116,
                   uitstroom_man_5j: 0.226,
+                  uitstroom_vrouw_10j: 0.232,
+                  uitstroom_man_10j: 0.373,
+                  uitstroom_vrouw_15j: 0.371,
+                  uitstroom_man_15j: 0.502,
+                  uitstroom_vrouw_20j: 0.51,
+                  uitstroom_man_20j: 0.632,
                   // Reset vraagcomponenten naar CSV defaults
                   epi_midden: 0.01,
                   soc_midden: 0.019,
@@ -1271,7 +1302,7 @@ const ScenarioModelAPI = () => {
             )}
           </div>
 
-          {/* Hoofd content area */}
+          {/* Rechterkant: Visualisaties */}
           <div style={{ width: '65%', position: 'sticky', top: '1rem', alignSelf: 'flex-start' }}>
 
             {/* Container met zwart kader om tegels en grafiek */}
@@ -1279,327 +1310,186 @@ const ScenarioModelAPI = () => {
 
               {/* KPI Tegels - 2 Rijen */}
               <div style={{ marginBottom: '1.5rem' }}>
-              {/* Rij 1: Voorkeursscenario (Baseline) */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
-                <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
-                  <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#0F2B5B' }}>
-                    Volgens voorkeursscenario:
+                {/* Rij 1: Voorkeursscenario (Baseline) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
+                  <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#0F2B5B' }}>
+                      Volgens voorkeursscenario:
+                    </div>
+                  </div>
+
+                  <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
+                    <div style={{ fontSize: '0.875rem', color: '#333' }}>
+                      Aanbod in 2043: {Math.round(baseline2043?.aanbod_fte || 0).toLocaleString('nl-NL')} FTE
+                    </div>
+                  </div>
+
+                  <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
+                    <div style={{ fontSize: '0.875rem', color: '#333' }}>
+                      Vraag in 2043: {Math.round(baseline2043?.benodigd_fte || 0).toLocaleString('nl-NL')} FTE
+                    </div>
+                  </div>
+
+                  <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
+                    <div style={{ fontSize: '0.875rem', color: '#333' }}>
+                      Voorkeursadvies: 1.026 personen
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
-                  <div style={{ fontSize: '0.875rem', color: '#333' }}>
-                    Aanbod in 2043: {Math.round(baseline2043?.aanbod_fte || 0).toLocaleString('nl-NL')} FTE
+                {/* Rij 2: Jouw scenario */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                  <div style={{ backgroundColor: '#e5f5f5', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#006470' }}>
+                      Volgens aangepast scenario:
+                    </div>
                   </div>
-                </div>
 
-                <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
-                  <div style={{ fontSize: '0.875rem', color: '#333' }}>
-                    Vraag in 2043: {Math.round(baseline2043?.benodigd_fte || 0).toLocaleString('nl-NL')} FTE
+                  <div style={{ backgroundColor: '#e5f5f5', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
+                    <div style={{ fontSize: '0.875rem', color: '#333' }}>
+                      Aangepast aanbod in 2043: {Math.round(evenwichtsjaar2043?.aanbod_fte || 0).toLocaleString('nl-NL')} FTE
+                    </div>
                   </div>
-                </div>
 
-                <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
-                  <div style={{ fontSize: '0.875rem', color: '#333' }}>
-                    Voorkeursadvies: 1.026 personen
+                  <div style={{ backgroundColor: '#e5f5f5', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
+                    <div style={{ fontSize: '0.875rem', color: '#333' }}>
+                      Aangepaste vraag in 2043: {Math.round(evenwichtsjaar2043?.benodigd_fte || 0).toLocaleString('nl-NL')} FTE
+                    </div>
+                  </div>
+
+                  <div style={{ backgroundColor: '#e5f5f5', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
+                    <div style={{ fontSize: '0.875rem', color: '#333' }}>
+                      Aangepaste instroomadvies: {Math.round(scenario.instroom).toLocaleString('nl-NL')} personen
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Rij 2: Jouw scenario */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-                <div style={{ backgroundColor: '#e5f5f5', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
-                  <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#006470' }}>
-                    Volgens aangepast scenario:
+              {/* Scenario vs Baseline Chart */}
+              <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: '1.5rem', position: 'relative' }}>
+
+                {/* Instroomadvies Tegel */}
+                {instroomadvies !== null && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '10px',
+                    left: '10px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: '1px solid #ddd',
+                    borderRadius: '0.5rem',
+                    padding: '1rem',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    zIndex: 10
+                  }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#0F2B5B', marginBottom: '0.5rem' }}>
+                      Aangepast instroomadvies voor evenwicht 2043
+                    </div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#006470' }}>
+                      {Math.round(instroomadvies).toLocaleString('nl-NL')} personen
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div style={{ backgroundColor: '#e5f5f5', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
-                  <div style={{ fontSize: '0.875rem', color: '#333' }}>
-                    Aangepast aanbod in 2043: {Math.round(evenwichtsjaar2043?.aanbod_fte || 0).toLocaleString('nl-NL')} FTE
-                  </div>
-                </div>
+                <ResponsiveContainer width="100%" height={500}>
+                  <LineChart data={combinedData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                    <XAxis dataKey="jaar" stroke="#666" style={{ fontSize: '14px' }} />
+                    <YAxis
+                      stroke="#666"
+                      style={{ fontSize: '14px' }}
+                      domain={[13000, 'auto']}
+                      tickFormatter={(value) => value.toLocaleString('nl-NL')}
+                      label={{ value: 'FTE', angle: -90, position: 'insideLeft', style: { fontSize: '14px', fill: '#666' } }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc', borderRadius: '8px' }}
+                      formatter={(value: any) => Math.round(value).toLocaleString('nl-NL')}
+                    />
+                    <Legend
+                      content={(props) => {
+                        const { payload } = props;
+                        if (!payload) return null;
 
-                <div style={{ backgroundColor: '#e5f5f5', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
-                  <div style={{ fontSize: '0.875rem', color: '#333' }}>
-                    Aangepaste vraag in 2043: {Math.round(evenwichtsjaar2043?.benodigd_fte || 0).toLocaleString('nl-NL')} FTE
-                  </div>
-                </div>
-
-                <div style={{ backgroundColor: '#e5f5f5', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem' }}>
-                  <div style={{ fontSize: '0.875rem', color: '#333' }}>
-                    Aangepaste instroomadvies: {Math.round(scenario.instroom).toLocaleString('nl-NL')} personen
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Scenario vs Baseline Chart */}
-            <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: '1.5rem', marginBottom: '1.5rem', position: 'relative' }}>
-
-              {/* Instroomadvies Tegel */}
-              {instroomadvies !== null && (
-                <div style={{
-                  position: 'absolute',
-                  top: '10px',
-                  left: '10px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  border: '1px solid #ddd',
-                  borderRadius: '0.5rem',
-                  padding: '1rem',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  zIndex: 10
-                }}>
-                  <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#0F2B5B', marginBottom: '0.5rem' }}>
-                    Aangepast instroomadvies voor evenwicht 2043
-                  </div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#006470' }}>
-                    {Math.round(instroomadvies).toLocaleString('nl-NL')} personen
-                  </div>
-                </div>
-              )}
-
-              <ResponsiveContainer width="100%" height={500}>
-                <LineChart data={combinedData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                  <XAxis dataKey="jaar" stroke="#666" style={{ fontSize: '14px' }} />
-                  <YAxis
-                    stroke="#666"
-                    style={{ fontSize: '14px' }}
-                    domain={[13000, 'auto']}
-                    tickFormatter={(value) => value.toLocaleString('nl-NL')}
-                    label={{ value: 'FTE', angle: -90, position: 'insideLeft', style: { fontSize: '14px', fill: '#666' } }}
-                  />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc', borderRadius: '8px' }}
-                    formatter={(value: any) => Math.round(value).toLocaleString('nl-NL')}
-                  />
-                  <Legend
-                    content={(props) => {
-                      const { payload } = props;
-                      if (!payload) return null;
-
-                      return (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', paddingTop: '20px' }}>
-                          {/* Rij 1: Aanbod items */}
-                          <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-                            {payload.slice(0, 2).map((entry: any, index: number) => (
-                              <div key={`legend-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{
-                                  width: '40px',
-                                  height: '0',
-                                  borderTop: entry.payload?.strokeDasharray ? `2px dashed ${entry.color}` : `3px solid ${entry.color}`
-                                }} />
-                                <span style={{ fontSize: '14px', color: '#666' }}>{entry.value}</span>
-                              </div>
-                            ))}
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', paddingTop: '20px' }}>
+                            {/* Rij 1: Aanbod items */}
+                            <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+                              {payload.slice(0, 2).map((entry: any, index: number) => (
+                                <div key={`legend-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div style={{
+                                    width: '40px',
+                                    height: '0',
+                                    borderTop: entry.payload?.strokeDasharray ? `2px dashed ${entry.color}` : `3px solid ${entry.color}`
+                                  }} />
+                                  <span style={{ fontSize: '14px', color: '#666' }}>{entry.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                            {/* Rij 2: Vraag items */}
+                            <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+                              {payload.slice(2, 4).map((entry: any, index: number) => (
+                                <div key={`legend-${index + 2}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div style={{
+                                    width: '40px',
+                                    height: '0',
+                                    borderTop: entry.payload?.strokeDasharray ? `2px dashed ${entry.color}` : `3px solid ${entry.color}`
+                                  }} />
+                                  <span style={{ fontSize: '14px', color: '#666' }}>{entry.value}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          {/* Rij 2: Vraag items */}
-                          <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-                            {payload.slice(2, 4).map((entry: any, index: number) => (
-                              <div key={`legend-${index + 2}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{
-                                  width: '40px',
-                                  height: '0',
-                                  borderTop: entry.payload?.strokeDasharray ? `2px dashed ${entry.color}` : `3px solid ${entry.color}`
-                                }} />
-                                <span style={{ fontSize: '14px', color: '#666' }}>{entry.value}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    }}
-                  />
+                        );
+                      }}
+                    />
 
-                  {/* Aangepast scenario lijnen (solid) - eerst voor legenda volgorde */}
-                  <Line type="monotone" dataKey="aanbod_fte" name="Aanbod volgens aangepast scenario" stroke="#0F2B5B" strokeWidth={3} dot={{ r: 4, fill: '#0F2B5B' }} />
-                  <Line type="monotone" dataKey="aanbod_baseline" name="Aanbod volgens voorkeursscenario" stroke="#006470" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                  <Line type="monotone" dataKey="benodigd_fte" name="Vraag volgens aangepast scenario" stroke="#D76628" strokeWidth={3} dot={{ r: 4, fill: '#D76628' }} />
-                  <Line type="monotone" dataKey="benodigd_baseline" name="Vraag volgens voorkeursscenario" stroke="#D76628" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+                    {/* Aangepast scenario lijnen (solid) - Animations disabled for instant updates */}
+                    <Line type="monotone" dataKey="aanbod_fte" name="Aanbod (aangepast scenario)" stroke="#0F2B5B" strokeWidth={3} dot={{ r: 4, fill: '#0F2B5B' }} isAnimationActive={false} />
+                    <Line type="monotone" dataKey="aanbod_baseline" name="Aanbod (voorkeursscenario)" stroke="#006470" strokeWidth={2} strokeDasharray="5 5" dot={false} isAnimationActive={false} />
+                    <Line type="monotone" dataKey="benodigd_fte" name="Vraag (aangepast scenario)" stroke="#D76628" strokeWidth={3} dot={{ r: 4, fill: '#D76628' }} isAnimationActive={false} />
+                    <Line type="monotone" dataKey="benodigd_baseline" name="Vraag (voorkeursscenario)" stroke="#D76628" strokeWidth={2} strokeDasharray="5 5" dot={false} isAnimationActive={false} />
+                  </LineChart>
+                </ResponsiveContainer>
 
-              {/* Tabel met FTE waarden per jaar */}
-              <div style={{ marginTop: '2rem', overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.6rem' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#f0f0f0' }}>
-                      <th style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center', fontWeight: '600' }}>Jaar</th>
-                      <th style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center', fontWeight: '600' }}>Aanbod volgens aangepast scenario (FTE)</th>
-                      <th style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center', fontWeight: '600' }}>Aanbod volgens voorkeursscenario (FTE)</th>
-                      <th style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center', fontWeight: '600' }}>Vraag volgens aangepast scenario (FTE)</th>
-                      <th style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center', fontWeight: '600' }}>Vraag volgens voorkeursscenario (FTE)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {projectie.map((row: any, index: number) => (
-                      <tr key={row.jaar}>
-                        <td style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center', fontWeight: '600', backgroundColor: '#f9f9f9' }}>
-                          {row.jaar}
-                        </td>
-                        <td style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center' }}>
-                          {Math.round(row.aanbod_fte).toLocaleString('nl-NL')}
-                        </td>
-                        <td style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center' }}>
-                          {Math.round(combinedData[index].aanbod_baseline).toLocaleString('nl-NL')}
-                        </td>
-                        <td style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center' }}>
-                          {Math.round(row.benodigd_fte).toLocaleString('nl-NL')}
-                        </td>
-                        <td style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center' }}>
-                          {Math.round(combinedData[index].benodigd_baseline).toLocaleString('nl-NL')}
-                        </td>
+                {/* Tabel met FTE waarden per jaar */}
+                <div style={{ marginTop: '2rem', overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.6rem' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f0f0f0' }}>
+                        <th style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center', fontWeight: '600' }}>Jaar</th>
+                        <th style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center', fontWeight: '600' }}>Aanbod (aangepast)</th>
+                        <th style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center', fontWeight: '600' }}>Aanbod (voorkeur)</th>
+                        <th style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center', fontWeight: '600' }}>Vraag (aangepast)</th>
+                        <th style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center', fontWeight: '600' }}>Vraag (voorkeur)</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {projectie.map((row: any, index: number) => (
+                        <tr key={row.jaar}>
+                          <td style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center', fontWeight: '600', backgroundColor: '#f9f9f9' }}>
+                            {row.jaar}
+                          </td>
+                          <td style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center' }}>
+                            {Math.round(row.aanbod_fte).toLocaleString('nl-NL')}
+                          </td>
+                          <td style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center' }}>
+                            {Math.round(combinedData[index].aanbod_baseline || 0).toLocaleString('nl-NL')}
+                          </td>
+                          <td style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center' }}>
+                            {Math.round(row.benodigd_fte).toLocaleString('nl-NL')}
+                          </td>
+                          <td style={{ padding: '0.3rem', border: '1px solid #ddd', textAlign: 'center' }}>
+                            {Math.round(combinedData[index].benodigd_baseline || 0).toLocaleString('nl-NL')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-
-            {/* Reset knop rechtsonder grafiek */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <button
-                onClick={() => setScenario({
-                  instroom: 718,
-                  intern_rendement: 0.94,
-                  opleidingsduur: 3.0,
-                  fte_vrouw: 0.72,
-                  fte_man: 0.81,
-                  extern_rendement_vrouw_1jaar: 0.989,
-                  extern_rendement_vrouw_5jaar: 0.943,
-                  extern_rendement_vrouw_10jaar: 0.889,
-                  extern_rendement_vrouw_15jaar: 0.851,
-                  extern_rendement_man_1jaar: 0.992,
-                  extern_rendement_man_5jaar: 0.959,
-                  extern_rendement_man_10jaar: 0.931,
-                  extern_rendement_man_15jaar: 0.905,
-                  uitstroom_vrouw_5j: 0.116,
-                  uitstroom_man_5j: 0.226,
-                  epi_midden: 0.01,
-                  soc_midden: 0.019,
-                  vak_midden: -0.003,
-                  eff_midden: -0.005,
-                  hor_midden: 0.016,
-                  tijd_midden: 0.0,
-                  ver_midden: -0.011,
-                  totale_zorgvraag_excl_ATV_midden: 0.026,
-                  demografie_factor: null,
-                  uitstroom_factor_vrouw: null,
-                  uitstroom_factor_man: null,
-                })}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.25rem',
-                  border: 'none',
-                  backgroundColor: '#0F2B5B',
-                  color: 'white',
-                  fontSize: '0.875rem',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                }}
-              >
-                🔄 Reset naar voorkeursscenario
-              </button>
-            </div>
-          </div> {/* Sluit black border container */}
-
-            {/* Footer */}
-            <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: '#006583' }}>
-              <p>Bron: Capaciteitsorgaan | Bestand: 2025-10-22_Parameterwaarden-2010-2013-2016-2019-2025_DEF.csv</p>
-              <p style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.5rem' }}>
-                Berekeningen: Officiële Stata methodologie | Python API backend | 3 Cohorten tracking
-              </p>
             </div>
           </div>
         </div>
-
-        {/* ========== IMPACTANALYSE - STAAFDIAGRAM (35% BREED) ========== */}
-        {impactAnalysis && (() => {
-          // Bereid data voor BarChart
-          const chartData = [
-            // Vraagfactoren
-            { naam: 'Demografie', waarde: Math.round(impactAnalysis.vraagfactoren.demografie), type: 'vraag' },
-            { naam: 'Epidemiologie', waarde: Math.round(impactAnalysis.vraagfactoren.epidemiologie_t), type: 'vraag' },
-            { naam: 'Sociaal-cultureel', waarde: Math.round(impactAnalysis.vraagfactoren.sociaal_cultureel_t), type: 'vraag' },
-            { naam: 'Vakinhoudelijk', waarde: Math.round(impactAnalysis.vraagfactoren.vakinhoudelijk_t), type: 'vraag' },
-            { naam: 'Efficiency', waarde: Math.round(impactAnalysis.vraagfactoren.efficiency_t), type: 'vraag' },
-            { naam: 'Horiz. substitutie', waarde: Math.round(impactAnalysis.vraagfactoren.horizontale_substitutie_t), type: 'vraag' },
-            { naam: 'ATV', waarde: Math.round(impactAnalysis.vraagfactoren.atv_t), type: 'vraag' },
-            { naam: 'Vert. substitutie', waarde: Math.round(impactAnalysis.vraagfactoren.verticale_substitutie_t), type: 'vraag' },
-            // Aanbodfactoren
-            { naam: 'Onvervulde vraag', waarde: Math.round(impactAnalysis.aanbodfactoren.onvervulde_vraag), type: 'aanbod' },
-            { naam: 'Uitstroom', waarde: Math.round(impactAnalysis.aanbodfactoren.uitstroom), type: 'aanbod' },
-            { naam: 'Nu in opleiding', waarde: Math.round(impactAnalysis.aanbodfactoren.nu_in_opleiding), type: 'aanbod' },
-            { naam: 'Tussen opleiding', waarde: Math.round(impactAnalysis.aanbodfactoren.tussen_opleiding), type: 'aanbod' },
-            { naam: 'Instroom buitenland', waarde: Math.round(impactAnalysis.aanbodfactoren.buitenland), type: 'aanbod' },
-          ];
-
-          // Sorteer op absolute waarde (grootste impact eerst)
-          chartData.sort((a, b) => Math.abs(b.waarde) - Math.abs(a.waarde));
-
-          // Functie voor kleur op basis van waarde
-          const getColor = (waarde: number) => {
-            if (waarde > 0) return '#006470'; // PMS_315 blauw voor positief
-            if (waarde < 0) return '#D76628'; // PMS_717 oranje voor negatief
-            return '#999'; // Grijs voor 0
-          };
-
-          return (
-            <div style={{ width: '35%', marginTop: '1.5rem' }}>
-              <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem', border: '2px solid #000' }}>
-                <h3 style={{ fontSize: '0.875rem', fontWeight: 'bold', color: '#0F2B5B', marginBottom: '0.5rem' }}>
-                  📊 Impactanalyse Instroomadvies ({impactAnalysis.jaar})
-                </h3>
-
-                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '0.75rem' }}>
-                  Bijdrage van factoren aan instroomadvies (in personen)
-                </div>
-
-                <ResponsiveContainer width="100%" height={450}>
-                  <BarChart
-                    data={chartData}
-                    layout="vertical"
-                    margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" style={{ fontSize: '0.75rem' }} />
-                    <YAxis
-                      type="category"
-                      dataKey="naam"
-                      width={160}
-                      style={{ fontSize: '0.75rem' }}
-                      orientation="left"
-                    />
-                    <Tooltip
-                      formatter={(value: any) => [`${value} personen`, 'Impact']}
-                      contentStyle={{ fontSize: '0.75rem' }}
-                    />
-                    <Bar dataKey="waarde" label={{ position: 'right', fontSize: 11 }}>
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={getColor(entry.waarde)} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-
-                {/* Totaal en verificatie */}
-                <div style={{ borderTop: '2px solid #0F2B5B', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', fontWeight: 'bold', color: '#0F2B5B' }}>
-                    <div>Totaal (Scenario 6):</div>
-                    <div>{Math.round(impactAnalysis.scenario_totalen.scenario6)} personen</div>
-                  </div>
-                  {instroomadvies && (
-                    <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.25rem', textAlign: 'right' }}>
-                      Instroomadvies: {Math.round(instroomadvies)} personen
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
       </div>
     </div>
   );

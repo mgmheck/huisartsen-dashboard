@@ -24,6 +24,9 @@ import os
 import traceback
 import sys
 import hashlib
+import json
+from functools import lru_cache
+from datetime import datetime
 
 # ==================================================================================
 # CONFIGURATIE
@@ -86,6 +89,22 @@ DEFAULT_PARAMS = {
     'tijd_midden': 0.0,
     'ver_midden': -0.011,
     'totale_zorgvraag_excl_ATV_midden': 0.026,
+}
+
+# ==================================================================================
+# CACHE CONFIGURATION
+# ==================================================================================
+
+# Cache size: 100 most recent scenario calculations
+CACHE_SIZE = 100
+
+# Cache statistics tracking
+cache_stats = {
+    'hits': 0,
+    'misses': 0,
+    'total_requests': 0,
+    'cache_size': 0,
+    'started_at': datetime.now().isoformat()
 }
 
 # ==================================================================================
@@ -173,7 +192,58 @@ def get_csv_hash() -> str:
         print(f"Warning: Could not calculate CSV hash: {e}", file=sys.stderr)
         return "unknown"
 
-def call_r_model(instroom: float, intern_rendement: float, fte_vrouw: float, fte_man: float,
+
+def create_cache_key(**params) -> str:
+    """
+    Create a unique cache key from scenario parameters.
+
+    Args:
+        **params: All scenario parameters
+
+    Returns:
+        str: MD5 hash of parameters (cache key)
+    """
+    # Sort parameters for consistent hashing
+    param_str = json.dumps(params, sort_keys=True)
+    return hashlib.md5(param_str.encode()).hexdigest()
+
+
+def get_cache_stats() -> dict:
+    """
+    Get current cache statistics.
+
+    Returns:
+        dict: Cache stats including hits, misses, hit rate
+    """
+    total = cache_stats['total_requests']
+    hits = cache_stats['hits']
+    hit_rate = (hits / total * 100) if total > 0 else 0
+
+    return {
+        'hits': hits,
+        'misses': cache_stats['misses'],
+        'total_requests': total,
+        'hit_rate_percent': round(hit_rate, 2),
+        'cache_size': cache_stats['cache_size'],
+        'max_cache_size': CACHE_SIZE,
+        'started_at': cache_stats['started_at'],
+        'uptime_seconds': (datetime.now() - datetime.fromisoformat(cache_stats['started_at'])).total_seconds()
+    }
+
+
+def clear_cache():
+    """Clear the scenario cache and reset statistics."""
+    global _scenario_cache, _cache_order
+    _scenario_cache.clear()
+    _cache_order.clear()
+    cache_stats['hits'] = 0
+    cache_stats['misses'] = 0
+    cache_stats['total_requests'] = 0
+    cache_stats['cache_size'] = 0
+    cache_stats['started_at'] = datetime.now().isoformat()
+
+
+def _call_r_model_uncached(instroom: float, intern_rendement: float, fte_vrouw: float, fte_man: float,
                  # Extern rendement - 8 individuele waarden (verplicht)
                  extern_rendement_vrouw_1jaar: float, extern_rendement_vrouw_5jaar: float,
                  extern_rendement_vrouw_10jaar: float, extern_rendement_vrouw_15jaar: float,
@@ -302,6 +372,66 @@ def call_r_model(instroom: float, intern_rendement: float, fte_vrouw: float, fte
         # Cleanup temp file
         if os.path.exists(output_file):
             os.remove(output_file)
+
+
+# Manual cache for DataFrames (LRU not possible with non-hashable types)
+_scenario_cache = {}
+_cache_order = []  # Track access order for LRU
+
+def call_r_model(**params):
+    """
+    Cached wrapper for _call_r_model_uncached().
+
+    Uses manual LRU cache since pandas DataFrames are not hashable.
+    Cache key is MD5 hash of all parameters.
+
+    Args:
+        **params: All parameters for scenario calculation
+
+    Returns:
+        pd.DataFrame: Scenario calculation results
+    """
+    global _scenario_cache, _cache_order
+
+    # Create cache key
+    cache_key = create_cache_key(**params)
+
+    # Update stats
+    cache_stats['total_requests'] += 1
+
+    # Check cache
+    if cache_key in _scenario_cache:
+        # Cache HIT
+        cache_stats['hits'] += 1
+
+        # Update LRU order (move to end = most recently used)
+        _cache_order.remove(cache_key)
+        _cache_order.append(cache_key)
+
+        print(f"✅ Cache HIT ({cache_stats['hits']}/{cache_stats['total_requests']})", file=sys.stderr)
+        return _scenario_cache[cache_key].copy()  # Return copy to prevent mutation
+
+    # Cache MISS - call R model
+    cache_stats['misses'] += 1
+    print(f"❌ Cache MISS ({cache_stats['misses']}/{cache_stats['total_requests']}) - Running R calculation...", file=sys.stderr)
+
+    result = _call_r_model_uncached(**params)
+
+    # Store in cache
+    _scenario_cache[cache_key] = result.copy()
+    _cache_order.append(cache_key)
+
+    # Enforce cache size limit (LRU eviction)
+    if len(_scenario_cache) > CACHE_SIZE:
+        # Remove oldest entry
+        oldest_key = _cache_order.pop(0)
+        del _scenario_cache[oldest_key]
+        print(f"🗑️  Cache eviction: {len(_scenario_cache)}/{CACHE_SIZE}", file=sys.stderr)
+
+    # Update cache size
+    cache_stats['cache_size'] = len(_scenario_cache)
+
+    return result
 
 
 def extract_impact_analysis(df: pd.DataFrame) -> dict:
@@ -753,6 +883,48 @@ def api_test():
             'status': 'error',
             'error': str(e)
         }), 500
+
+
+@app.route('/api/cache/stats', methods=['GET'])
+def api_cache_stats():
+    """
+    Get cache statistics.
+
+    Returns cache performance metrics including hits, misses, hit rate,
+    and current cache size.
+
+    Returns:
+        JSON with cache statistics
+    """
+    try:
+        stats = get_cache_stats()
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/cache/clear', methods=['POST'])
+def api_cache_clear():
+    """
+    Clear the scenario cache and reset statistics.
+
+    This endpoint allows administrators to manually clear the cache,
+    useful after data updates or for troubleshooting.
+
+    Returns:
+        JSON confirmation
+    """
+    try:
+        old_stats = get_cache_stats()
+        clear_cache()
+        return jsonify({
+            'status': 'success',
+            'message': 'Cache cleared successfully',
+            'previous_stats': old_stats,
+            'new_stats': get_cache_stats()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 # ==================================================================================

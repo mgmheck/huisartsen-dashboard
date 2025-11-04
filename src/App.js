@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Dashboard from './Dashboard.tsx';
 import ScenarioModelAPI from './ScenarioModelAPI.tsx';
+import ScenarioModelAPIOptimized from './src-optimized/ScenarioModelAPIOptimized.tsx';
 
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -45,13 +46,30 @@ function App() {
             transition: 'all 0.2s'
           }}
         >
-          🔮 Scenario Model (Stata-accurate)
+          🔮 Scenario Model (Origineel)
+        </button>
+        <button
+          onClick={() => setCurrentView('scenario-optimized')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            borderRadius: '0.5rem',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            backgroundColor: currentView === 'scenario-optimized' ? '#006470' : 'transparent',
+            color: 'white',
+            transition: 'all 0.2s'
+          }}
+        >
+          ⚡ Scenario Model GEOPTIMALISEERD
         </button>
       </div>
 
       {/* Content */}
       {currentView === 'dashboard' && <Dashboard />}
       {currentView === 'scenario' && <ScenarioModelAPI />}
+      {currentView === 'scenario-optimized' && <ScenarioModelAPIOptimized />}
     </div>
   );
 }

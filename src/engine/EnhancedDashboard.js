@@ -88,6 +88,7 @@ const EnhancedDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [apiConnected, setApiConnected] = useState(false);
+  const [changedParams, setChangedParams] = useState(new Set());
 
   // Load scenario function - defined before useEffect that uses it
   const loadScenario = useCallback(async () => {
@@ -207,8 +208,26 @@ const EnhancedDashboard = () => {
   const handleCalculate = () => {
     if (apiConnected && !loading) {
       loadScenario();
+      // Clear changed parameters after calculation
+      setChangedParams(new Set());
     }
   };
+
+  // Helper function to mark parameter as changed
+  const markParamChanged = (paramName) => {
+    setChangedParams(prev => new Set(prev).add(paramName));
+  };
+
+  // Helper function to get slider style with red border if changed
+  const getSliderStyle = (paramName) => ({
+    width: '100%',
+    padding: '0.5rem',
+    borderRadius: '0.25rem',
+    border: changedParams.has(paramName) ? '2px solid #DC2626' : '1px solid #ccc',
+    fontSize: '1rem',
+    marginBottom: '0.5rem',
+    boxSizing: 'border-box'
+  });
 
   // Merge projectie en baseline voor chart - MEMOIZED for performance
   const combinedData = useMemo(() => projectie.map((item, idx) => ({
@@ -283,6 +302,27 @@ const EnhancedDashboard = () => {
           {/* Linkerzijbalk: Scenario Controls */}
           <div style={{ width: '35%', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
 
+            {/* Bereken scenario knop */}
+            <button
+              onClick={handleCalculate}
+              disabled={loading || !apiConnected}
+              style={{
+                width: '100%',
+                padding: '0.5rem 0.75rem',
+                borderRadius: '0.375rem',
+                border: 'none',
+                backgroundColor: loading || !apiConnected ? '#cccccc' : '#D76628',
+                color: 'white',
+                fontSize: '0.875rem',
+                fontWeight: 'bold',
+                cursor: loading || !apiConnected ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+                marginBottom: '0.5rem'
+              }}
+            >
+              {loading ? 'Berekenen...' : 'Berekening aangepast scenario'}
+            </button>
+
             {/* ========== SECTIE 1: AANBOD ========== */}
             <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem', border: '2px solid #000' }}>
               <div style={{ paddingTop: '0', marginTop: '0', marginBottom: '0.5rem' }}>
@@ -329,8 +369,11 @@ const EnhancedDashboard = () => {
                     type="number"
                     step="1"
                     value={scenario.instroom}
-                    onChange={(e) => setScenario({...scenario, instroom: parseFloat(e.target.value)})}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                    onChange={(e) => {
+                      setScenario({...scenario, instroom: parseFloat(e.target.value)});
+                      markParamChanged('instroom');
+                    }}
+                    style={getSliderStyle('instroom')}
                   />
                   <input
                     type="range"
@@ -338,7 +381,10 @@ const EnhancedDashboard = () => {
                     max="1500"
                     step="10"
                     value={scenario.instroom}
-                    onChange={(e) => setScenario({...scenario, instroom: parseFloat(e.target.value)})}
+                    onChange={(e) => {
+                      setScenario({...scenario, instroom: parseFloat(e.target.value)});
+                      markParamChanged('instroom');
+                    }}
                     style={{ width: '100%', display: 'block' }}
                   />
                   <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -1227,27 +1273,6 @@ const EnhancedDashboard = () => {
                 }}
               >
                 🔄 Reset naar voorkeursscenario
-              </button>
-
-              {/* Bereken scenario knop */}
-              <button
-                onClick={handleCalculate}
-                disabled={loading || !apiConnected}
-                style={{
-                  width: '100%',
-                  padding: '1rem',
-                  borderRadius: '0.5rem',
-                  border: 'none',
-                  backgroundColor: loading || !apiConnected ? '#cccccc' : '#D76628',
-                  color: 'white',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  cursor: loading || !apiConnected ? 'not-allowed' : 'pointer',
-                  marginTop: '1.5rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {loading ? '⏳ Berekenen...' : '🚀 Bereken scenario'}
               </button>
 
             {loading && (

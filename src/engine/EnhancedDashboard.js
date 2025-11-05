@@ -192,14 +192,15 @@ const EnhancedDashboard = () => {
       .catch(() => setApiConnected(false));
   }, []);
 
-  // Load baseline on mount
+  // Load baseline on mount - alleen bij mount, niet bij elke scenario verandering
   useEffect(() => {
     if (apiConnected) {
       loadBaseline();
       // Load initial scenario (voorkeursscenario)
       loadScenario();
     }
-  }, [apiConnected, loadScenario]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiConnected]);
 
   // Manual calculation trigger - gebruiker past eerst alle parameters aan
   // en klikt dan op "Bereken scenario" om berekening te starten

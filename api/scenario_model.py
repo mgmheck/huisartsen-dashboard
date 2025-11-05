@@ -16,6 +16,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_compress import Compress
 import subprocess
 import pandas as pd
 from pathlib import Path
@@ -61,6 +62,10 @@ CORS(app, resources={
         "max_age": 3600
     }
 })
+
+# Response compression voor snelere data transfers
+# Compresseert JSON responses met gzip (40-80% kleiner)
+Compress(app)
 
 # Rate limiting configuratie
 limiter = Limiter(
@@ -118,7 +123,7 @@ DEFAULT_PARAMS = {
 # ==================================================================================
 
 # Cache size: 100 most recent scenario calculations
-CACHE_SIZE = 100
+CACHE_SIZE = 500  # Verhoogd van 100 naar 500 voor betere cache hits
 
 # Cache statistics tracking
 cache_stats = {

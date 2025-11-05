@@ -38,7 +38,28 @@ DATA_PATH = Path(os.getenv('DATA_PATH', "/Users/mgmheck/Library/CloudStorage/One
 
 # Flask app
 app = Flask(__name__)
-CORS(app)
+
+# CORS configuratie - specifieke origins voor security
+CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            # Lokale development
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            # Render (huidige productie - behouden voor rollback)
+            "https://huisartsen-dashboard-frontend.onrender.com",
+            # Railway + Cloudflare (nieuwe productie)
+            "https://huisartsen-dashboard-frontend.pages.dev",
+            "https://huisartsen-dashboard-backend.railway.app",
+            # Custom domains (voeg toe indien nodig)
+            # "https://dashboard.capaciteitsorgaan.nl",
+        ],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"],
+        "supports_credentials": False,
+        "max_age": 3600
+    }
+})
 
 # Rate limiting configuratie
 limiter = Limiter(

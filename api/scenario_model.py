@@ -67,11 +67,12 @@ CORS(app, resources={
 # Compresseert JSON responses met gzip (40-80% kleiner)
 Compress(app)
 
-# Rate limiting configuratie
+# Rate limiting configuratie - ruime limieten voor normale usage
+# Bescherming tegen misbruik maar toestaan van normale parameter experimenten
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
+    default_limits=["1000 per day", "200 per hour", "100 per 10 minutes"],
     storage_uri="memory://"
 )
 

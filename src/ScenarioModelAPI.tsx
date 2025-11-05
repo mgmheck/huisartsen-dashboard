@@ -282,6 +282,16 @@ const ScenarioModelAPI = () => {
     boxSizing: 'border-box' as const
   });
 
+  // Reset all parameters to baseline and recalculate immediately
+  const resetToBaseline = () => {
+    setScenario(BASELINE);
+    setChangedParams(new Set());
+    // Trigger immediate recalculation
+    if (apiConnected && !loading) {
+      loadScenario();
+    }
+  };
+
   // Merge projectie en baseline voor chart - MEMOIZED for performance
   const combinedData = useMemo(() => projectie.map((item, idx) => ({
     jaar: item.jaar,
@@ -361,8 +371,8 @@ const ScenarioModelAPI = () => {
               disabled={loading || !apiConnected}
               style={{
                 width: '100%',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '0.375rem',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '0.25rem',
                 border: 'none',
                 backgroundColor: loading || !apiConnected ? '#cccccc' : '#D76628',
                 color: 'white',
@@ -384,19 +394,7 @@ const ScenarioModelAPI = () => {
                     📦 Aanbod
                   </h3>
                   <button
-                    onClick={() => setScenario({...scenario,
-                      instroom: BASELINE.instroom,
-                      fte_vrouw: BASELINE.fte_vrouw,
-                      fte_man: BASELINE.fte_man,
-                      uitstroom_vrouw_5j: BASELINE.uitstroom_vrouw_5j,
-                      uitstroom_man_5j: BASELINE.uitstroom_man_5j,
-                      uitstroom_vrouw_10j: BASELINE.uitstroom_vrouw_10j,
-                      uitstroom_man_10j: BASELINE.uitstroom_man_10j,
-                      uitstroom_vrouw_15j: BASELINE.uitstroom_vrouw_15j,
-                      uitstroom_man_15j: BASELINE.uitstroom_man_15j,
-                      uitstroom_vrouw_20j: BASELINE.uitstroom_vrouw_20j,
-                      uitstroom_man_20j: BASELINE.uitstroom_man_20j,
-                    })}
+                    onClick={resetToBaseline}
                     title="Reset naar voorkeursscenario"
                     style={{
                       padding: '0.25rem 0.5rem',
@@ -456,8 +454,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.01"
                       value={scenario.fte_vrouw.toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, fte_vrouw: parseFloat(e.target.value)})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, fte_vrouw: parseFloat(e.target.value)});
+                        markParamChanged('fte_vrouw');
+                      }}
+                      style={getSliderStyle('fte_vrouw')}
                     />
                     <input
                       type="range"
@@ -465,7 +466,10 @@ const ScenarioModelAPI = () => {
                       max="1.0"
                       step="0.01"
                       value={scenario.fte_vrouw}
-                      onChange={(e) => setScenario({...scenario, fte_vrouw: parseFloat(e.target.value)})}
+                      onChange={(e) => {
+                        setScenario({...scenario, fte_vrouw: parseFloat(e.target.value)});
+                        markParamChanged('fte_vrouw');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -482,8 +486,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.01"
                       value={scenario.fte_man.toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, fte_man: parseFloat(e.target.value)})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, fte_man: parseFloat(e.target.value)});
+                        markParamChanged('fte_man');
+                      }}
+                      style={getSliderStyle('fte_man')}
                     />
                     <input
                       type="range"
@@ -491,7 +498,10 @@ const ScenarioModelAPI = () => {
                       max="1.0"
                       step="0.01"
                       value={scenario.fte_man}
-                      onChange={(e) => setScenario({...scenario, fte_man: parseFloat(e.target.value)})}
+                      onChange={(e) => {
+                        setScenario({...scenario, fte_man: parseFloat(e.target.value)});
+                        markParamChanged('fte_man');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -511,8 +521,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.001"
                       value={(scenario.uitstroom_vrouw_5j * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, uitstroom_vrouw_5j: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_vrouw_5j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_vrouw_5j');
+                      }}
+                      style={getSliderStyle('uitstroom_vrouw_5j')}
                     />
                     <input
                       type="range"
@@ -520,7 +533,10 @@ const ScenarioModelAPI = () => {
                       max="30"
                       step="0.1"
                       value={scenario.uitstroom_vrouw_5j * 100}
-                      onChange={(e) => setScenario({...scenario, uitstroom_vrouw_5j: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_vrouw_5j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_vrouw_5j');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -537,8 +553,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.001"
                       value={(scenario.uitstroom_man_5j * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, uitstroom_man_5j: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_man_5j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_man_5j');
+                      }}
+                      style={getSliderStyle('uitstroom_man_5j')}
                     />
                     <input
                       type="range"
@@ -546,7 +565,10 @@ const ScenarioModelAPI = () => {
                       max="30"
                       step="0.1"
                       value={scenario.uitstroom_man_5j * 100}
-                      onChange={(e) => setScenario({...scenario, uitstroom_man_5j: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_man_5j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_man_5j');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -566,8 +588,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.001"
                       value={(scenario.uitstroom_vrouw_10j * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, uitstroom_vrouw_10j: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_vrouw_10j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_vrouw_10j');
+                      }}
+                      style={getSliderStyle('uitstroom_vrouw_10j')}
                     />
                     <input
                       type="range"
@@ -575,7 +600,10 @@ const ScenarioModelAPI = () => {
                       max="50"
                       step="0.1"
                       value={scenario.uitstroom_vrouw_10j * 100}
-                      onChange={(e) => setScenario({...scenario, uitstroom_vrouw_10j: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_vrouw_10j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_vrouw_10j');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -592,8 +620,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.001"
                       value={(scenario.uitstroom_man_10j * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, uitstroom_man_10j: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_man_10j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_man_10j');
+                      }}
+                      style={getSliderStyle('uitstroom_man_10j')}
                     />
                     <input
                       type="range"
@@ -601,7 +632,10 @@ const ScenarioModelAPI = () => {
                       max="50"
                       step="0.1"
                       value={scenario.uitstroom_man_10j * 100}
-                      onChange={(e) => setScenario({...scenario, uitstroom_man_10j: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_man_10j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_man_10j');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -621,8 +655,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.001"
                       value={(scenario.uitstroom_vrouw_15j * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, uitstroom_vrouw_15j: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_vrouw_15j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_vrouw_15j');
+                      }}
+                      style={getSliderStyle('uitstroom_vrouw_15j')}
                     />
                     <input
                       type="range"
@@ -630,7 +667,10 @@ const ScenarioModelAPI = () => {
                       max="60"
                       step="0.1"
                       value={scenario.uitstroom_vrouw_15j * 100}
-                      onChange={(e) => setScenario({...scenario, uitstroom_vrouw_15j: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_vrouw_15j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_vrouw_15j');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -647,8 +687,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.001"
                       value={(scenario.uitstroom_man_15j * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, uitstroom_man_15j: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_man_15j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_man_15j');
+                      }}
+                      style={getSliderStyle('uitstroom_man_15j')}
                     />
                     <input
                       type="range"
@@ -656,7 +699,10 @@ const ScenarioModelAPI = () => {
                       max="60"
                       step="0.1"
                       value={scenario.uitstroom_man_15j * 100}
-                      onChange={(e) => setScenario({...scenario, uitstroom_man_15j: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_man_15j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_man_15j');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -676,8 +722,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.001"
                       value={(scenario.uitstroom_vrouw_20j * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, uitstroom_vrouw_20j: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_vrouw_20j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_vrouw_20j');
+                      }}
+                      style={getSliderStyle('uitstroom_vrouw_20j')}
                     />
                     <input
                       type="range"
@@ -685,7 +734,10 @@ const ScenarioModelAPI = () => {
                       max="70"
                       step="0.1"
                       value={scenario.uitstroom_vrouw_20j * 100}
-                      onChange={(e) => setScenario({...scenario, uitstroom_vrouw_20j: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_vrouw_20j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_vrouw_20j');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -702,8 +754,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.001"
                       value={(scenario.uitstroom_man_20j * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, uitstroom_man_20j: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_man_20j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_man_20j');
+                      }}
+                      style={getSliderStyle('uitstroom_man_20j')}
                     />
                     <input
                       type="range"
@@ -711,7 +766,10 @@ const ScenarioModelAPI = () => {
                       max="70"
                       step="0.1"
                       value={scenario.uitstroom_man_20j * 100}
-                      onChange={(e) => setScenario({...scenario, uitstroom_man_20j: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, uitstroom_man_20j: parseFloat(e.target.value) / 100});
+                        markParamChanged('uitstroom_man_20j');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -730,18 +788,7 @@ const ScenarioModelAPI = () => {
                     🎓 Opleiding
                   </h3>
                   <button
-                    onClick={() => setScenario({...scenario,
-                      intern_rendement: BASELINE.intern_rendement,
-                      opleidingsduur: BASELINE.opleidingsduur,
-                      extern_rendement_vrouw_1jaar: BASELINE.extern_rendement_vrouw_1jaar,
-                      extern_rendement_vrouw_5jaar: BASELINE.extern_rendement_vrouw_5jaar,
-                      extern_rendement_vrouw_10jaar: BASELINE.extern_rendement_vrouw_10jaar,
-                      extern_rendement_vrouw_15jaar: BASELINE.extern_rendement_vrouw_15jaar,
-                      extern_rendement_man_1jaar: BASELINE.extern_rendement_man_1jaar,
-                      extern_rendement_man_5jaar: BASELINE.extern_rendement_man_5jaar,
-                      extern_rendement_man_10jaar: BASELINE.extern_rendement_man_10jaar,
-                      extern_rendement_man_15jaar: BASELINE.extern_rendement_man_15jaar,
-                    })}
+                    onClick={resetToBaseline}
                     title="Reset naar voorkeursscenario"
                     style={{
                       padding: '0.25rem 0.5rem',
@@ -775,7 +822,7 @@ const ScenarioModelAPI = () => {
                         setScenario({...scenario, intern_rendement: value});
                       }
                     }}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                    style={getSliderStyle('uitstroom_man_20j')}
                   />
                   <input
                     type="range"
@@ -783,7 +830,10 @@ const ScenarioModelAPI = () => {
                     max="1.0"
                     step="0.01"
                     value={scenario.intern_rendement}
-                    onChange={(e) => setScenario({...scenario, intern_rendement: parseFloat(e.target.value)})}
+                    onChange={(e) => {
+                      setScenario({...scenario, intern_rendement: parseFloat(e.target.value)});
+                      markParamChanged('intern_rendement');
+                    }}
                     style={{ width: '100%', display: 'block' }}
                   />
                   <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -808,7 +858,7 @@ const ScenarioModelAPI = () => {
                         setScenario({...scenario, opleidingsduur: value});
                       }
                     }}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                    style={getSliderStyle('intern_rendement')}
                   />
                   <input
                     type="range"
@@ -816,7 +866,10 @@ const ScenarioModelAPI = () => {
                     max="4.0"
                     step="0.1"
                     value={scenario.opleidingsduur}
-                    onChange={(e) => setScenario({...scenario, opleidingsduur: parseFloat(e.target.value)})}
+                    onChange={(e) => {
+                      setScenario({...scenario, opleidingsduur: parseFloat(e.target.value)});
+                      markParamChanged('opleidingsduur');
+                    }}
                     style={{ width: '100%', display: 'block' }}
                   />
                   <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -835,8 +888,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.1"
                       value={(scenario.extern_rendement_vrouw_1jaar * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_vrouw_1jaar: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_vrouw_1jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_vrouw_1jaar');
+                      }}
+                      style={getSliderStyle('extern_rendement_vrouw_1jaar')}
                     />
                     <input
                       type="range"
@@ -844,7 +900,10 @@ const ScenarioModelAPI = () => {
                       max="100"
                       step="0.1"
                       value={scenario.extern_rendement_vrouw_1jaar * 100}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_vrouw_1jaar: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_vrouw_1jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_vrouw_1jaar');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -861,8 +920,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.1"
                       value={(scenario.extern_rendement_man_1jaar * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_man_1jaar: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_man_1jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_man_1jaar');
+                      }}
+                      style={getSliderStyle('extern_rendement_man_1jaar')}
                     />
                     <input
                       type="range"
@@ -870,7 +932,10 @@ const ScenarioModelAPI = () => {
                       max="100"
                       step="0.1"
                       value={scenario.extern_rendement_man_1jaar * 100}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_man_1jaar: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_man_1jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_man_1jaar');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -890,8 +955,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.1"
                       value={(scenario.extern_rendement_vrouw_5jaar * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_vrouw_5jaar: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_vrouw_5jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_vrouw_5jaar');
+                      }}
+                      style={getSliderStyle('extern_rendement_vrouw_5jaar')}
                     />
                     <input
                       type="range"
@@ -899,7 +967,10 @@ const ScenarioModelAPI = () => {
                       max="100"
                       step="0.1"
                       value={scenario.extern_rendement_vrouw_5jaar * 100}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_vrouw_5jaar: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_vrouw_5jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_vrouw_5jaar');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -916,8 +987,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.1"
                       value={(scenario.extern_rendement_man_5jaar * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_man_5jaar: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_man_5jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_man_5jaar');
+                      }}
+                      style={getSliderStyle('extern_rendement_man_5jaar')}
                     />
                     <input
                       type="range"
@@ -925,7 +999,10 @@ const ScenarioModelAPI = () => {
                       max="100"
                       step="0.1"
                       value={scenario.extern_rendement_man_5jaar * 100}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_man_5jaar: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_man_5jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_man_5jaar');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -945,8 +1022,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.1"
                       value={(scenario.extern_rendement_vrouw_10jaar * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_vrouw_10jaar: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_vrouw_10jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_vrouw_10jaar');
+                      }}
+                      style={getSliderStyle('extern_rendement_vrouw_10jaar')}
                     />
                     <input
                       type="range"
@@ -954,7 +1034,10 @@ const ScenarioModelAPI = () => {
                       max="100"
                       step="0.1"
                       value={scenario.extern_rendement_vrouw_10jaar * 100}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_vrouw_10jaar: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_vrouw_10jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_vrouw_10jaar');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -971,8 +1054,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.1"
                       value={(scenario.extern_rendement_man_10jaar * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_man_10jaar: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_man_10jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_man_10jaar');
+                      }}
+                      style={getSliderStyle('extern_rendement_man_10jaar')}
                     />
                     <input
                       type="range"
@@ -980,7 +1066,10 @@ const ScenarioModelAPI = () => {
                       max="100"
                       step="0.1"
                       value={scenario.extern_rendement_man_10jaar * 100}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_man_10jaar: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_man_10jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_man_10jaar');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -1000,8 +1089,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.1"
                       value={(scenario.extern_rendement_vrouw_15jaar * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_vrouw_15jaar: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_vrouw_15jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_vrouw_15jaar');
+                      }}
+                      style={getSliderStyle('extern_rendement_vrouw_15jaar')}
                     />
                     <input
                       type="range"
@@ -1009,7 +1101,10 @@ const ScenarioModelAPI = () => {
                       max="100"
                       step="0.1"
                       value={scenario.extern_rendement_vrouw_15jaar * 100}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_vrouw_15jaar: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_vrouw_15jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_vrouw_15jaar');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -1026,8 +1121,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.1"
                       value={(scenario.extern_rendement_man_15jaar * 100).toFixed(1)}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_man_15jaar: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_man_15jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_man_15jaar');
+                      }}
+                      style={getSliderStyle('extern_rendement_man_15jaar')}
                     />
                     <input
                       type="range"
@@ -1035,7 +1133,10 @@ const ScenarioModelAPI = () => {
                       max="100"
                       step="0.1"
                       value={scenario.extern_rendement_man_15jaar * 100}
-                      onChange={(e) => setScenario({...scenario, extern_rendement_man_15jaar: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, extern_rendement_man_15jaar: parseFloat(e.target.value) / 100});
+                        markParamChanged('extern_rendement_man_15jaar');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -1054,16 +1155,7 @@ const ScenarioModelAPI = () => {
                     📊 Vraag (Niet-demografische ontwikkelingen)
                   </h3>
                   <button
-                    onClick={() => setScenario({...scenario,
-                      epi_midden: BASELINE.epi_midden,
-                      soc_midden: BASELINE.soc_midden,
-                      vak_midden: BASELINE.vak_midden,
-                      eff_midden: BASELINE.eff_midden,
-                      hor_midden: BASELINE.hor_midden,
-                      tijd_midden: BASELINE.tijd_midden,
-                      ver_midden: BASELINE.ver_midden,
-                      totale_zorgvraag_excl_ATV_midden: BASELINE.totale_zorgvraag_excl_ATV_midden,
-                    })}
+                    onClick={resetToBaseline}
                     title="Reset naar voorkeursscenario"
                     style={{
                       padding: '0.25rem 0.5rem',
@@ -1091,8 +1183,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.01"
                       value={(scenario.epi_midden * 100).toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, epi_midden: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, epi_midden: parseFloat(e.target.value) / 100});
+                        markParamChanged('epi_midden');
+                      }}
+                      style={getSliderStyle('epi_midden')}
                     />
                     <input
                       type="range"
@@ -1100,7 +1195,10 @@ const ScenarioModelAPI = () => {
                       max="4"
                       step="0.01"
                       value={(scenario.epi_midden * 100).toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, epi_midden: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, epi_midden: parseFloat(e.target.value) / 100});
+                        markParamChanged('epi_midden');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -1117,8 +1215,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.01"
                       value={(scenario.soc_midden * 100).toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, soc_midden: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, soc_midden: parseFloat(e.target.value) / 100});
+                        markParamChanged('soc_midden');
+                      }}
+                      style={getSliderStyle('soc_midden')}
                     />
                     <input
                       type="range"
@@ -1126,7 +1227,10 @@ const ScenarioModelAPI = () => {
                       max="4"
                       step="0.01"
                       value={(scenario.soc_midden * 100).toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, soc_midden: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, soc_midden: parseFloat(e.target.value) / 100});
+                        markParamChanged('soc_midden');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -1146,8 +1250,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.01"
                       value={(scenario.vak_midden * 100).toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, vak_midden: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, vak_midden: parseFloat(e.target.value) / 100});
+                        markParamChanged('vak_midden');
+                      }}
+                      style={getSliderStyle('vak_midden')}
                     />
                     <input
                       type="range"
@@ -1155,7 +1262,10 @@ const ScenarioModelAPI = () => {
                       max="4"
                       step="0.01"
                       value={(scenario.vak_midden * 100).toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, vak_midden: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, vak_midden: parseFloat(e.target.value) / 100});
+                        markParamChanged('vak_midden');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -1172,8 +1282,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.01"
                       value={(scenario.eff_midden * 100).toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, eff_midden: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, eff_midden: parseFloat(e.target.value) / 100});
+                        markParamChanged('eff_midden');
+                      }}
+                      style={getSliderStyle('eff_midden')}
                     />
                     <input
                       type="range"
@@ -1181,7 +1294,10 @@ const ScenarioModelAPI = () => {
                       max="4"
                       step="0.01"
                       value={(scenario.eff_midden * 100).toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, eff_midden: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, eff_midden: parseFloat(e.target.value) / 100});
+                        markParamChanged('eff_midden');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -1201,8 +1317,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.01"
                       value={(scenario.hor_midden * 100).toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, hor_midden: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, hor_midden: parseFloat(e.target.value) / 100});
+                        markParamChanged('hor_midden');
+                      }}
+                      style={getSliderStyle('hor_midden')}
                     />
                     <input
                       type="range"
@@ -1210,7 +1329,10 @@ const ScenarioModelAPI = () => {
                       max="4"
                       step="0.01"
                       value={(scenario.hor_midden * 100).toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, hor_midden: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, hor_midden: parseFloat(e.target.value) / 100});
+                        markParamChanged('hor_midden');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -1227,8 +1349,11 @@ const ScenarioModelAPI = () => {
                       type="number"
                       step="0.01"
                       value={(scenario.ver_midden * 100).toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, ver_midden: parseFloat(e.target.value) / 100})}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      onChange={(e) => {
+                        setScenario({...scenario, ver_midden: parseFloat(e.target.value) / 100});
+                        markParamChanged('ver_midden');
+                      }}
+                      style={getSliderStyle('ver_midden')}
                     />
                     <input
                       type="range"
@@ -1236,7 +1361,10 @@ const ScenarioModelAPI = () => {
                       max="4"
                       step="0.01"
                       value={(scenario.ver_midden * 100).toFixed(2)}
-                      onChange={(e) => setScenario({...scenario, ver_midden: parseFloat(e.target.value) / 100})}
+                      onChange={(e) => {
+                        setScenario({...scenario, ver_midden: parseFloat(e.target.value) / 100});
+                        markParamChanged('ver_midden');
+                      }}
                       style={{ width: '100%', display: 'block' }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -1254,8 +1382,11 @@ const ScenarioModelAPI = () => {
                     type="number"
                     step="0.01"
                     value={(scenario.tijd_midden * 100).toFixed(2)}
-                    onChange={(e) => setScenario({...scenario, tijd_midden: parseFloat(e.target.value) / 100})}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #ccc', fontSize: '1rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                    onChange={(e) => {
+                      setScenario({...scenario, tijd_midden: parseFloat(e.target.value) / 100});
+                      markParamChanged('tijd_midden');
+                    }}
+                    style={getSliderStyle('tijd_midden')}
                   />
                   <input
                     type="range"
@@ -1263,7 +1394,10 @@ const ScenarioModelAPI = () => {
                     max="4"
                     step="0.01"
                     value={(scenario.tijd_midden * 100).toFixed(2)}
-                    onChange={(e) => setScenario({...scenario, tijd_midden: parseFloat(e.target.value) / 100})}
+                    onChange={(e) => {
+                      setScenario({...scenario, tijd_midden: parseFloat(e.target.value) / 100});
+                      markParamChanged('tijd_midden');
+                    }}
                     style={{ width: '100%', display: 'block' }}
                   />
                   <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
@@ -1275,43 +1409,7 @@ const ScenarioModelAPI = () => {
 
             {/* Reset knop */}
             <button
-                onClick={() => setScenario({
-                  instroom: 718,
-                  intern_rendement: 0.94,
-                  opleidingsduur: 3.0,
-                  fte_vrouw: 0.72,
-                  fte_man: 0.81,
-                  // Reset extern rendement naar CSV defaults (8 waarden)
-                  extern_rendement_vrouw_1jaar: 0.989,
-                  extern_rendement_vrouw_5jaar: 0.943,
-                  extern_rendement_vrouw_10jaar: 0.889,
-                  extern_rendement_vrouw_15jaar: 0.851,
-                  extern_rendement_man_1jaar: 0.992,
-                  extern_rendement_man_5jaar: 0.959,
-                  extern_rendement_man_10jaar: 0.931,
-                  extern_rendement_man_15jaar: 0.905,
-                  uitstroom_vrouw_5j: 0.116,
-                  uitstroom_man_5j: 0.226,
-                  uitstroom_vrouw_10j: 0.232,
-                  uitstroom_man_10j: 0.373,
-                  uitstroom_vrouw_15j: 0.371,
-                  uitstroom_man_15j: 0.502,
-                  uitstroom_vrouw_20j: 0.51,
-                  uitstroom_man_20j: 0.632,
-                  // Reset vraagcomponenten naar CSV defaults
-                  epi_midden: 0.01,
-                  soc_midden: 0.019,
-                  vak_midden: -0.003,
-                  eff_midden: -0.005,
-                  hor_midden: 0.016,
-                  tijd_midden: 0.0,
-                  ver_midden: -0.011,
-                  totale_zorgvraag_excl_ATV_midden: 0.026,
-                  // Reset demografie en uitstroom factors naar null
-                  demografie_factor: null,
-                  uitstroom_factor_vrouw: null,
-                  uitstroom_factor_man: null,
-                })}
+                onClick={resetToBaseline}
                 style={{
                   width: '100%',
                   padding: '0.75rem',

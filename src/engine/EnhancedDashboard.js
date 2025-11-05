@@ -90,51 +90,7 @@ const EnhancedDashboard = () => {
   const [apiConnected, setApiConnected] = useState(false);
   const [isDebouncing, setIsDebouncing] = useState(false);
 
-  // Check API health
-  useEffect(() => {
-    fetch(`${API_URL}/health`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'healthy') {
-          setApiConnected(true);
-        }
-      })
-      .catch(() => setApiConnected(false));
-  }, []);
-
-  // Load baseline on mount
-  useEffect(() => {
-    if (apiConnected) {
-      loadBaseline();
-    }
-  }, [apiConnected]);
-
-  // Load scenario when parameters change
-  useEffect(() => {
-    if (apiConnected) {
-      setIsDebouncing(true);
-      const debounce = setTimeout(() => {
-        setIsDebouncing(false);
-        loadScenario();
-      }, 250);  // Debounce 250ms - optimized for faster response
-
-      return () => {
-        clearTimeout(debounce);
-        setIsDebouncing(false);
-      };
-    }
-  }, [scenario, apiConnected, loadScenario]);
-
-  const loadBaseline = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/baseline`);
-      const data = await response.json();
-      setBaseline(data.projectie);
-    } catch (err) {
-      console.error('Failed to load baseline:', err);
-    }
-  };
-
+  // Load scenario function - defined before useEffect that uses it
   const loadScenario = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -214,6 +170,51 @@ const EnhancedDashboard = () => {
       setLoading(false);
     }
   }, [scenario]);
+
+  const loadBaseline = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/baseline`);
+      const data = await response.json();
+      setBaseline(data.projectie);
+    } catch (err) {
+      console.error('Failed to load baseline:', err);
+    }
+  };
+
+  // Check API health
+  useEffect(() => {
+    fetch(`${API_URL}/health`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'healthy') {
+          setApiConnected(true);
+        }
+      })
+      .catch(() => setApiConnected(false));
+  }, []);
+
+  // Load baseline on mount
+  useEffect(() => {
+    if (apiConnected) {
+      loadBaseline();
+    }
+  }, [apiConnected]);
+
+  // Load scenario when parameters change
+  useEffect(() => {
+    if (apiConnected) {
+      setIsDebouncing(true);
+      const debounce = setTimeout(() => {
+        setIsDebouncing(false);
+        loadScenario();
+      }, 250);  // Debounce 250ms - optimized for faster response
+
+      return () => {
+        clearTimeout(debounce);
+        setIsDebouncing(false);
+      };
+    }
+  }, [scenario, apiConnected, loadScenario]);
 
   // Merge projectie en baseline voor chart - MEMOIZED for performance
   const combinedData = useMemo(() => projectie.map((item, idx) => ({

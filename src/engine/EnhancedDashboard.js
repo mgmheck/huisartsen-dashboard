@@ -88,7 +88,6 @@ const EnhancedDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [apiConnected, setApiConnected] = useState(false);
-  const [isDebouncing, setIsDebouncing] = useState(false);
 
   // Load scenario function - defined before useEffect that uses it
   const loadScenario = useCallback(async () => {
@@ -197,24 +196,18 @@ const EnhancedDashboard = () => {
   useEffect(() => {
     if (apiConnected) {
       loadBaseline();
+      // Load initial scenario (voorkeursscenario)
+      loadScenario();
     }
   }, [apiConnected]);
 
-  // Load scenario when parameters change
-  useEffect(() => {
-    if (apiConnected) {
-      setIsDebouncing(true);
-      const debounce = setTimeout(() => {
-        setIsDebouncing(false);
-        loadScenario();
-      }, 100);  // Debounce 100ms - snelle response met minimal typing lag
-
-      return () => {
-        clearTimeout(debounce);
-        setIsDebouncing(false);
-      };
+  // Manual calculation trigger - gebruiker past eerst alle parameters aan
+  // en klikt dan op "Bereken scenario" om berekening te starten
+  const handleCalculate = () => {
+    if (apiConnected && !isLoading) {
+      loadScenario();
     }
-  }, [scenario, apiConnected, loadScenario]);
+  };
 
   // Merge projectie en baseline voor chart - MEMOIZED for performance
   const combinedData = useMemo(() => projectie.map((item, idx) => ({
@@ -262,7 +255,7 @@ const EnhancedDashboard = () => {
             <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#006583', marginBottom: '0' }}>
               Interactief Scenario Model Kamer Huisartsen 2025
             </h1>
-            {(isDebouncing || loading) && (
+            {loading && (
               <div style={{ fontSize: '0.875rem', color: '#006470', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <div style={{
                   width: '1rem',
@@ -272,7 +265,7 @@ const EnhancedDashboard = () => {
                   borderRadius: '50%',
                   animation: 'spin 0.6s linear infinite'
                 }} />
-                <span>{isDebouncing ? 'Berekening voorbereiden...' : 'Berekenen...'}</span>
+                <span>Berekenen...</span>
               </div>
             )}
           </div>
@@ -1233,6 +1226,27 @@ const EnhancedDashboard = () => {
                 }}
               >
                 🔄 Reset naar voorkeursscenario
+              </button>
+
+              {/* Bereken scenario knop */}
+              <button
+                onClick={handleCalculate}
+                disabled={loading || !apiConnected}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  backgroundColor: loading || !apiConnected ? '#cccccc' : '#D76628',
+                  color: 'white',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  cursor: loading || !apiConnected ? 'not-allowed' : 'pointer',
+                  marginTop: '1.5rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {loading ? '⏳ Berekenen...' : '🚀 Bereken scenario'}
               </button>
 
             {loading && (

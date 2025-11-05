@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Helper functie voor Nederlandse nummer notatie (komma i.p.v. punt)
@@ -85,7 +85,6 @@ const EnhancedDashboard = () => {
   const [projectie, setProjectie] = useState([]);
   const [baseline, setBaseline] = useState([]);
   const [instroomadvies, setInstroomadvies] = useState(null);
-  const [_impactAnalysis, setImpactAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [apiConnected, setApiConnected] = useState(false);
@@ -124,7 +123,7 @@ const EnhancedDashboard = () => {
         setIsDebouncing(false);
       };
     }
-  }, [scenario, apiConnected]);
+  }, [scenario, apiConnected, loadScenario]);
 
   const loadBaseline = async () => {
     try {
@@ -136,7 +135,7 @@ const EnhancedDashboard = () => {
     }
   };
 
-  const loadScenario = async () => {
+  const loadScenario = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -201,7 +200,6 @@ const EnhancedDashboard = () => {
       const data = await response.json();
       setProjectie(data.projectie);
       setInstroomadvies(data.instroomadvies_2043 || null);
-      setImpactAnalysis(data.impact_analysis || null);
 
       // Debug logging
       console.log('📊 API Response ontvangen:');
@@ -215,7 +213,7 @@ const EnhancedDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [scenario]);
 
   // Merge projectie en baseline voor chart - MEMOIZED for performance
   const combinedData = useMemo(() => projectie.map((item, idx) => ({

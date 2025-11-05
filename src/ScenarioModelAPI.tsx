@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ScenarioParameters {
@@ -138,7 +138,6 @@ const ScenarioModelAPI = () => {
   const [projectie, setProjectie] = useState<ProjectieData[]>([]);
   const [baseline, setBaseline] = useState<ProjectieData[]>([]);
   const [instroomadvies, setInstroomadvies] = useState<number | null>(null);
-  const [_impactAnalysis, setImpactAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiConnected, setApiConnected] = useState(false);
@@ -177,7 +176,7 @@ const ScenarioModelAPI = () => {
         setIsDebouncing(false);
       };
     }
-  }, [scenario, apiConnected]);
+  }, [scenario, apiConnected, loadScenario]);
 
   const loadBaseline = async () => {
     try {
@@ -189,7 +188,7 @@ const ScenarioModelAPI = () => {
     }
   };
 
-  const loadScenario = async () => {
+  const loadScenario = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -254,7 +253,6 @@ const ScenarioModelAPI = () => {
       const data = await response.json();
       setProjectie(data.projectie);
       setInstroomadvies(data.instroomadvies_2043 || null);
-      setImpactAnalysis(data.impact_analysis || null);
 
       // Debug logging
       console.log('📊 API Response ontvangen:');
@@ -268,7 +266,7 @@ const ScenarioModelAPI = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [scenario]);
 
   // Merge projectie en baseline voor chart - MEMOIZED for performance
   const combinedData = useMemo(() => projectie.map((item, idx) => ({

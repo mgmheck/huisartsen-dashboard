@@ -8,8 +8,8 @@ Dit zorgt voor 100% consistentie met het officiële capaciteitsplan model
 en de validatie resultaten (VALIDATIE_RESULTATEN.txt).
 
 Autor: Claude Code
-Datum: 2025-10-25
-Versie: 3.0 (R Wrapper - Optie D)
+Datum: 2025-11-05
+Versie: 3.0 (R Wrapper - Railway Deployment)
 """
 
 from flask import Flask, jsonify, request

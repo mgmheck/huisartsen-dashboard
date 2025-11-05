@@ -44,20 +44,25 @@ COPY r_scripts/ /app/r_scripts/
 
 # Set environment variables
 ENV PYTHONPATH=/app \
-    PORT=10000 \
     FLASK_ENV=production
 
-# Expose port
-EXPOSE 10000
+# Railway provides PORT dynamically - don't hardcode it!
+# Default to 5001 for local development
+ENV PORT=5001
 
-# Simplified health check (no requests library dependency in check)
+# Expose port (Railway will override this)
+EXPOSE ${PORT}
+
+# Simplified health check - use $PORT from environment
+# Railway will inject the correct PORT
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:10000/health || exit 1
+  CMD curl -f http://localhost:${PORT}/health || exit 1
 
-# Start Flask app with gunicorn (optimized workers)
-CMD ["gunicorn", "--bind", "0.0.0.0:10000", \
-     "--workers", "1", \
-     "--threads", "4", \
-     "--timeout", "120", \
-     "--access-logfile", "-", \
-     "api.scenario_model:app"]
+# Start Flask app with gunicorn - use $PORT from environment
+# Railway will inject PORT automatically (e.g., PORT=8080)
+CMD gunicorn --bind 0.0.0.0:$PORT \
+     --workers 1 \
+     --threads 4 \
+     --timeout 120 \
+     --access-logfile - \
+     api.scenario_model:app

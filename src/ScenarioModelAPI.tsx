@@ -257,7 +257,7 @@ const ScenarioModelAPI = () => {
   // Manual calculation trigger - gebruiker past eerst alle parameters aan
   // en klikt dan op "Bereken scenario" om berekening te starten
   const handleCalculate = () => {
-    if (apiConnected && !isLoading) {
+    if (apiConnected && !loading) {
       loadScenario();
     }
   };
@@ -1284,22 +1284,22 @@ const ScenarioModelAPI = () => {
               {/* Bereken scenario knop */}
               <button
                 onClick={handleCalculate}
-                disabled={isLoading || !apiConnected}
+                disabled={loading || !apiConnected}
                 style={{
                   width: '100%',
                   padding: '1rem',
                   borderRadius: '0.5rem',
                   border: 'none',
-                  backgroundColor: isLoading || !apiConnected ? '#cccccc' : '#D76628',
+                  backgroundColor: loading || !apiConnected ? '#cccccc' : '#D76628',
                   color: 'white',
                   fontSize: '1rem',
                   fontWeight: 'bold',
-                  cursor: isLoading || !apiConnected ? 'not-allowed' : 'pointer',
+                  cursor: loading || !apiConnected ? 'not-allowed' : 'pointer',
                   marginTop: '1.5rem',
                   transition: 'all 0.2s'
                 }}
               >
-                {isLoading ? '⏳ Berekenen...' : '🚀 Bereken scenario'}
+                {loading ? '⏳ Berekenen...' : '🚀 Bereken scenario'}
               </button>
 
             {loading && (

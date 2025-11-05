@@ -207,7 +207,7 @@ const EnhancedDashboard = () => {
       const debounce = setTimeout(() => {
         setIsDebouncing(false);
         loadScenario();
-      }, 250);  // Debounce 250ms - optimized for faster response
+      }, 100);  // Debounce 100ms - snelle response met minimal typing lag
 
       return () => {
         clearTimeout(debounce);

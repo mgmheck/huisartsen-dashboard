@@ -60,9 +60,11 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 # Start Flask app with gunicorn - use $PORT from environment
 # Railway will inject PORT automatically (e.g., PORT=8080)
+# Workers=2 voor parallel request processing (2 R scripts tegelijk)
 CMD gunicorn --bind 0.0.0.0:$PORT \
-     --workers 1 \
+     --workers 2 \
      --threads 4 \
      --timeout 120 \
+     --worker-class sync \
      --access-logfile - \
      api.scenario_model:app

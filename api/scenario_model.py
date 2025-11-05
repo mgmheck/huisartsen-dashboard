@@ -40,8 +40,9 @@ DATA_PATH = Path(os.getenv('DATA_PATH', "/Users/mgmheck/Library/CloudStorage/One
 app = Flask(__name__)
 
 # CORS configuratie - specifieke origins voor security
+# Toegepast op ALLE routes (inclusief /health)
 CORS(app, resources={
-    r"/api/*": {
+    r"/*": {  # Alle routes, niet alleen /api/*
         "origins": [
             # Lokale development
             "http://localhost:3000",

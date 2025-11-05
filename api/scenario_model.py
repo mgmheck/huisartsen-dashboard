@@ -408,12 +408,18 @@ def call_r_model(**params):
         _cache_order.remove(cache_key)
         _cache_order.append(cache_key)
 
-        print(f"✅ Cache HIT ({cache_stats['hits']}/{cache_stats['total_requests']})", file=sys.stderr)
+        try:
+            print(f"✅ Cache HIT ({cache_stats['hits']}/{cache_stats['total_requests']})", file=sys.stderr)
+        except (BrokenPipeError, IOError):
+            pass
         return _scenario_cache[cache_key].copy()  # Return copy to prevent mutation
 
     # Cache MISS - call R model
     cache_stats['misses'] += 1
-    print(f"❌ Cache MISS ({cache_stats['misses']}/{cache_stats['total_requests']}) - Running R calculation...", file=sys.stderr)
+    try:
+        print(f"❌ Cache MISS ({cache_stats['misses']}/{cache_stats['total_requests']}) - Running R calculation...", file=sys.stderr)
+    except (BrokenPipeError, IOError):
+        pass
 
     result = _call_r_model_uncached(**params)
 

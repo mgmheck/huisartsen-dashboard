@@ -204,7 +204,7 @@ const EnhancedDashboard = () => {
   // Manual calculation trigger - gebruiker past eerst alle parameters aan
   // en klikt dan op "Bereken scenario" om berekening te starten
   const handleCalculate = () => {
-    if (apiConnected && !isLoading) {
+    if (apiConnected && !loading) {
       loadScenario();
     }
   };

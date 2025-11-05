@@ -199,7 +199,7 @@ const EnhancedDashboard = () => {
       // Load initial scenario (voorkeursscenario)
       loadScenario();
     }
-  }, [apiConnected]);
+  }, [apiConnected, loadScenario]);
 
   // Manual calculation trigger - gebruiker past eerst alle parameters aan
   // en klikt dan op "Bereken scenario" om berekening te starten

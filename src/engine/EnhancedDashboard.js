@@ -310,26 +310,44 @@ const EnhancedDashboard = () => {
           {/* Linkerzijbalk: Scenario Controls */}
           <div style={{ width: '35%', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
 
-            {/* Bereken scenario knop */}
-            <button
-              onClick={handleCalculate}
-              disabled={loading || !apiConnected}
-              style={{
-                width: '100%',
-                padding: '0.25rem 0.5rem',
-                borderRadius: '0.25rem',
-                border: 'none',
-                backgroundColor: loading || !apiConnected ? '#cccccc' : '#D76628',
-                color: 'white',
-                fontSize: '0.875rem',
-                fontWeight: 'bold',
-                cursor: loading || !apiConnected ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s',
-                marginBottom: '0.5rem'
-              }}
-            >
-              {loading ? 'Berekenen...' : 'Berekening aangepast scenario'}
-            </button>
+            {/* Knoppen rij: Bereken en Reset */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <button
+                onClick={handleCalculate}
+                disabled={loading || !apiConnected}
+                style={{
+                  flex: 1,
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '0.25rem',
+                  border: 'none',
+                  backgroundColor: loading || !apiConnected ? '#cccccc' : '#D76628',
+                  color: 'white',
+                  fontSize: '0.875rem',
+                  fontWeight: 'bold',
+                  cursor: loading || !apiConnected ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {loading ? 'Berekenen...' : 'Berekening aangepast scenario'}
+              </button>
+              <button
+                onClick={resetToBaseline}
+                title="Reset naar voorkeursscenario"
+                style={{
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '0.25rem',
+                  border: 'none',
+                  backgroundColor: '#0F2B5B',
+                  color: 'white',
+                  fontSize: '0.875rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                🔄
+              </button>
+            </div>
 
             {/* ========== SECTIE 1: AANBOD ========== */}
             <div style={{ backgroundColor: '#f8f8f8', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '0.75rem', border: '2px solid #000' }}>

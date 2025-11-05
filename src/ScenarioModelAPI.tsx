@@ -282,14 +282,12 @@ const ScenarioModelAPI = () => {
     boxSizing: 'border-box' as const
   });
 
-  // Reset all parameters to baseline and recalculate immediately
+  // Reset all parameters to baseline and restore cached baseline data
   const resetToBaseline = () => {
     setScenario(BASELINE);
     setChangedParams(new Set());
-    // Trigger immediate recalculation
-    if (apiConnected && !loading) {
-      loadScenario();
-    }
+    // Restore cached baseline projectie (no recalculation needed)
+    setProjectie(baseline);
   };
 
   // Merge projectie en baseline voor chart - MEMOIZED for performance

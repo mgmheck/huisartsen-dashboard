@@ -8,3 +8,7 @@
 // Performance hooks
 export { useDebounce, useDebouncedCallback, useThrottle } from './useDebounce';
 export { useCSVCache, clearAllCSVCaches } from './useCSVCache';
+
+// Data hooks
+export { useCSVData } from './useCSVData';
+export { useScenarioAPI } from './useScenarioAPI';
